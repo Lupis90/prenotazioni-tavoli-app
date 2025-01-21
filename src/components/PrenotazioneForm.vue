@@ -1,15 +1,7 @@
 <template>
   <q-form @submit.prevent="onSubmit" ref="form" class="q-gutter-md">
-    <q-select
-      filled
-      v-model="tavoloSelezionato"
-      :options="opzioniTavoli"
-      label="Scegli un tavolo"
-      emit-value
-      map-options
-      :rules="[val => !!val || 'Campo obbligatorio']"
-    />
 
+    <!-- Scegli un gioco -->
     <q-select
       filled
       v-model="giocoSelezionato"
@@ -20,6 +12,7 @@
       :rules="[val => !!val || 'Campo obbligatorio']"
     />
 
+    <!-- Data inizio -->
     <q-input
       filled
       type="date"
@@ -40,75 +33,31 @@
       </template>
     </q-input>
 
-    <q-input
-      filled
-      type="time"
+    <!-- Ora inizio (radio button group) -->
+    <q-option-group
       v-model="oraInizio"
-      label="Ora inizio"
+      :options="opzioniOrari"
+      type="radio"
+      label="Seleziona ora di inizio"
       :rules="[val => !!val || 'Campo obbligatorio']"
-      format24h
-    >
-      <template v-slot:append>
-        <q-icon name="access_time" class="cursor-pointer">
-          <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-            <q-time v-model="oraInizio" mask="HH:mm" format24h :locale="quasarLang">
-              <div class="row items-center justify-end">
-                <q-btn v-close-popup label="Close" color="primary" flat />
-              </div>
-            </q-time>
-          </q-popup-proxy>
-        </q-icon>
-      </template>
-    </q-input>
+    />
 
+    <!-- Numero di persone -->
     <q-input
       filled
-      type="date"
-      v-model="dataFine"
-      label="Data fine"
-      :rules="[val => !!val || 'Campo obbligatorio']"
-    >
-      <template v-slot:append>
-        <q-icon name="event" class="cursor-pointer">
-          <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-            <q-date v-model="dataFine" mask="YYYY-MM-DD" :locale="quasarLang">
-              <div class="row items-center justify-end">
-                <q-btn v-close-popup label="Close" color="primary" flat />
-              </div>
-            </q-date>
-          </q-popup-proxy>
-        </q-icon>
-      </template>
-    </q-input>
+      type="number"
+      v-model.number="numeroPersone"
+      label="Numero di persone"
+      :rules="[val => validateNumPersone(val)]"
+    />
 
-    <q-input
-      filled
-      type="time"
-      v-model="oraFine"
-      label="Ora fine"
-      :rules="[val => !!val || 'Campo obbligatorio']"
-      format24h
-    >
-      <template v-slot:append>
-        <q-icon name="access_time" class="cursor-pointer">
-          <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-            <q-time v-model="oraFine" mask="HH:mm" format24h :locale="quasarLang">
-              <div class="row items-center justify-end">
-                <q-btn v-close-popup label="Close" color="primary" flat />
-              </div>
-            </q-time>
-          </q-popup-proxy>
-        </q-icon>
-      </template>
-    </q-input>
-
+    <!-- Dati del cliente -->
     <q-input
       filled
       v-model="nomeCliente"
       label="Nome Cliente"
       :rules="[val => !!val || 'Campo obbligatorio']"
     />
-
     <q-input
       filled
       type="email"
@@ -116,7 +65,6 @@
       label="Email Cliente"
       :rules="[val => !!val || 'Campo obbligatorio']"
     />
-
     <q-input
       filled
       type="tel"
@@ -128,6 +76,7 @@
     <div>
       <q-btn label="Prenota" type="submit" color="primary" />
     </div>
+
   </q-form>
 </template>
 
@@ -145,92 +94,156 @@ export default defineComponent({
     const router = useRouter();
     const form = ref(null);
 
-    const tavoloSelezionato = ref(null);
+    // Campi del form
     const giocoSelezionato = ref(null);
     const dataInizio = ref(null);
     const oraInizio = ref(null);
-    const dataFine = ref(null);
-    const oraFine = ref(null);
+    const numeroPersone = ref(1);
     const nomeCliente = ref(null);
     const emailCliente = ref(null);
     const telefonoCliente = ref(null);
 
-    const opzioniTavoli = ref([]);
+    // Opzioni giochi (caricate da Supabase)
     const opzioniGiochi = ref([]);
+    const opzioniOrari = ref([
+      { label: '18:00', value: '18:00' },
+      { label: '19:00', value: '19:00' },
+      { label: '20:00', value: '20:00' },
+      { label: '21:00', value: '21:00' },
+      { label: '22:00', value: '22:00' },
+    ]);
 
+    // Carichiamo i giochi disponibili
     onMounted(async () => {
-      try {
-        const { data: tavoliData, error: tavoliError } = await supabase
-          .from('tavoli')
-          .select('id, numero, posti, descrizione')
-          .eq('disponibile', true);
-
-        if (tavoliError) throw tavoliError;
-        opzioniTavoli.value = tavoliData.map(tavolo => ({
-          label: `Tavolo ${tavolo.numero} (${tavolo.posti} posti) - ${tavolo.descrizione}`,
-          value: tavolo.id
-        }));
-      } catch (error) {
-        console.error('Errore nel caricamento dei tavoli:', error);
-      }
-
       try {
         const { data: giochiData, error: giochiError } = await supabase
           .from('giochi')
-          .select('id, nome, descrizione')
-          .eq('disponibile', true)
-          .gt('quantita', 0);
+          .select('*')
+          .eq('disponibile', true);
 
         if (giochiError) throw giochiError;
-        opzioniGiochi.value = giochiData.map(gioco => ({
-          label: `${gioco.nome} - ${gioco.descrizione}`,
-          value: gioco.id
+
+        // Mappiamo i giochi come opzioni per il select
+        opzioniGiochi.value = giochiData.map((gioco) => ({
+          label: `${gioco.nome} (${gioco.giocatori_min}-${gioco.giocatori_max} giocatori)`,
+          value: gioco.id,
+          // intero oggetto se vuoi recuperare subito i dati:
+          giocoCompleto: gioco
         }));
       } catch (error) {
         console.error('Errore nel caricamento dei giochi:', error);
       }
     });
 
+    // Funzione di validazione del numero di persone
+    function validateNumPersone(val) {
+      // Se non abbiamo selezionato il gioco, per ora non validiamo
+      if (!giocoSelezionato.value) return true;
+
+      // Troviamo il gioco corrispondente
+      const found = opzioniGiochi.value.find(
+        (g) => g.value === giocoSelezionato.value
+      );
+      if (!found) return true;
+      const { giocatori_min, giocatori_max } = found.giocoCompleto || {};
+
+      if (val < giocatori_min || val > giocatori_max) {
+        return `Numero di persone deve essere tra ${giocatori_min} e ${giocatori_max}`;
+      }
+      return true;
+    }
+
+    // Al submit facciamo la prenotazione
     const onSubmit = async () => {
       // 1. Valida il form
       const isValid = await form.value.validate();
-      if (!isValid) {
-        // Se non è valido, interrompiamo
+      if (!isValid) return;
+
+      // 2. Recuperiamo i dati del gioco selezionato (per durata, min, max, ecc.)
+      const selected = opzioniGiochi.value.find(
+        (opt) => opt.value === giocoSelezionato.value
+      );
+      if (!selected) {
+        $q.notify({ type: 'warning', message: 'Gioco non trovato' });
+        return;
+      }
+      const gameData = selected.giocoCompleto;
+      const durata = gameData.durata_media || 60; // default 60 min se manca
+      const giocMax = gameData.giocatori_max;
+
+      // 3. Calcoliamo data_inizio e data_fine in ISO 8601
+      const startIso = `${dataInizio.value}T${oraInizio.value}:00+01:00`;
+      const startDateObj = new Date(startIso);
+      const endDateObj = new Date(startDateObj.getTime() + durata * 60000); // durata in minuti
+      const endIso = endDateObj.toISOString(); // data_fine
+
+      // 4. Verifica Overlap:
+      //    Cerchiamo tutte le prenotazioni che si sovrappongono all'intervallo [startIso, endIso)
+      //    e sommiamo numero_persone già prenotate
+      try {
+        const { data: overlapping, error } = await supabase
+          .from('prenotazioni')
+          .select('numero_persone, data_inizio, data_fine')
+          .eq('gioco_id', giocoSelezionato.value)
+          // condizione overlap: (prenotazione.data_inizio < endIso) AND (prenotazione.data_fine > startIso)
+          .lt('data_inizio', endIso)
+          .gt('data_fine', startIso);
+
+        if (error) throw error;
+
+        const totalAlreadyBooked = overlapping.reduce((sum, row) => {
+          return sum + (row.numero_persone || 0);
+        }, 0);
+
+        const newSum = totalAlreadyBooked + numeroPersone.value;
+
+        if (newSum > giocMax) {
+          // Non c'è spazio sufficiente!
+          $q.notify({
+            type: 'negative',
+            message:
+              'Non ci sono abbastanza posti disponibili in questa fascia oraria!'
+          });
+          return;
+        }
+      } catch (err) {
+        console.error('Errore durante il check overlap:', err);
+        $q.notify({
+          type: 'negative',
+          message:
+            'Errore durante la verifica della disponibilità. Riprova più tardi.'
+        });
         return;
       }
 
-      // 2. Prepara dataInizio e dataFine in formato ISO 8601
-      const formattedDataOraInizio = `${dataInizio.value}T${oraInizio.value}:00+01:00`;
-      const formattedDataOraFine = `${dataFine.value}T${oraFine.value}:00+01:00`;
-
+      // 5. Se tutto ok, inseriamo la prenotazione (senza toccare quantita)
       try {
-        // 3. Invio a Supabase
         const { data, error } = await supabase
           .from('prenotazioni')
           .insert([
             {
-              tavolo_id: tavoloSelezionato.value,
               gioco_id: giocoSelezionato.value,
-              data_inizio: formattedDataOraInizio,
-              data_fine: formattedDataOraFine,
+              data_inizio: startIso,
+              data_fine: endIso, // se vuoi memorizzarla
               nome_cliente: nomeCliente.value,
               email_cliente: emailCliente.value,
               telefono_cliente: telefonoCliente.value,
-            },
-          ]).select();
+              numero_persone: numeroPersone.value
+            }
+          ])
+          .select();
 
         if (error) throw error;
 
-        // 4. Mostra notifica di successo
+        // Notifica
         $q.notify({
           message: 'Prenotazione effettuata con successo!',
-          color: 'positive',
+          color: 'positive'
         });
-        console.log('Dati prenotazione:', data);
+        console.log('Dati prenotazione inseriti:', data);
 
-        // 5. Reset del form e redirect
-        form.value.reset(); // Resetta campi e validazione
-
+        // Reset del form e redirect
+        form.value.reset();
         setTimeout(() => {
           router.push('/');
         }, 1500);
@@ -238,27 +251,26 @@ export default defineComponent({
         console.error('Errore durante la prenotazione:', error);
         $q.notify({
           message: 'Errore durante la prenotazione. Riprova.',
-          color: 'negative',
+          color: 'negative'
         });
       }
     };
 
     return {
       form,
-      tavoloSelezionato,
       giocoSelezionato,
       dataInizio,
       oraInizio,
-      dataFine,
-      oraFine,
+      numeroPersone,
       nomeCliente,
       emailCliente,
       telefonoCliente,
-      opzioniTavoli,
       opzioniGiochi,
+      opzioniOrari,
       onSubmit,
+      validateNumPersone,
       quasarLang
     };
-  },
+  }
 });
 </script>

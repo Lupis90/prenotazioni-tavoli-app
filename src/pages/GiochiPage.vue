@@ -23,8 +23,19 @@
               {{ props.row.disponibile ? 'Disponibile' : 'Non disponibile' }}
             </q-badge>
           </q-td>
+          <!-- Nuove colonne -->
+          <q-td key="giocatori_min" :props="props">
+            {{ props.row.giocatori_min }}
+          </q-td>
+          <q-td key="giocatori_max" :props="props">
+            {{ props.row.giocatori_max }}
+          </q-td>
+          <q-td key="durata_media" :props="props">
+            {{ props.row.durata_media }} min
+          </q-td>
         </q-tr>
       </template>
+
       <template v-slot:no-data>
         Nessun gioco disponibile.
       </template>
@@ -40,10 +51,13 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { supabase } from 'src/supabase';
 
 const columnsGiochi = [
-  { name: 'nome', align: 'left', label: 'Nome', field: 'nome' },
-  { name: 'descrizione', align: 'left', label: 'Descrizione', field: 'descrizione' },
-  { name: 'quantita', align: 'left', label: 'Quantità', field: 'quantita' },
-  { name: 'disponibile', align: 'left', label: 'Disponibile', field: 'disponibile' }
+  { name: 'nome', label: 'Nome', field: 'nome', align: 'left' },
+  { name: 'descrizione', label: 'Descrizione', field: 'descrizione', align: 'left' },
+  { name: 'quantita', label: 'Quantità', field: 'quantita', align: 'left' },
+  { name: 'disponibile', label: 'Disponibile', field: 'disponibile', align: 'left' },
+  { name: 'giocatori_min', label: 'Min', field: 'giocatori_min', align: 'left' },
+  { name: 'giocatori_max', label: 'Max', field: 'giocatori_max', align: 'left' },
+  { name: 'durata_media', label: 'Durata (min)', field: 'durata_media', align: 'left' }
 ];
 
 export default defineComponent({
@@ -52,21 +66,19 @@ export default defineComponent({
     const giochi = ref([]);
     const loadingGiochi = ref(false);
 
-    onMounted(() => {
-      (async () => { // <-- IIFE (Immediately Invoked Function Expression)
-        loadingGiochi.value = true;
-        try {
-          const { data, error } = await supabase
-            .from('giochi')
-            .select('*');
-          if (error) throw error;
-          giochi.value = data;
-        } catch (error) {
-          console.error('Errore nel caricamento dei giochi:', error);
-        } finally {
-          loadingGiochi.value = false;
-        }
-      })(); // <-- Chiamata immediata della funzione
+    onMounted(async () => {
+      loadingGiochi.value = true;
+      try {
+        const { data, error } = await supabase
+          .from('giochi')
+          .select('*');
+        if (error) throw error;
+        giochi.value = data;
+      } catch (error) {
+        console.error('Errore nel caricamento dei giochi:', error);
+      } finally {
+        loadingGiochi.value = false;
+      }
     });
 
     return {
