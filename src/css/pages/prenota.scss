@@ -1,0 +1,105 @@
+/* Updated CSS with a pastel-friendly color palette */
+
+/* Overall page background – a light, warm cream */
+.q-page {
+    background-color: #FFF4EC !important; /* Pastel cream tone */
+  }
+  
+  /* Gradient text gets a softer pastel gradient */
+  .text-gradient {
+    background: linear-gradient(45deg, #a64011, #c0b1a7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  
+  /* Separator with a gentle transition */
+  .separator {
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #FFA387, transparent);
+    margin-top: 16px;
+  }
+  
+  /* Date selector container with slightly transparent pastel background */
+  .date-selector {
+    background: rgba(255, 195, 160, 0.4);
+    border-radius: 16px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  /* Game card with a subtle hover effect */
+  .game-card {
+    border-radius: 16px;
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    background: #FFFFFF; /* Crisp white card background */
+  
+    &:hover {
+      transform: translateY(-5px);
+    }
+  }
+  
+  /* Keep the top image corners rounded */
+  .game-image {
+    border-radius: 16px 16px 0 0;
+  }
+  
+  /* Gradient overlay on the image, from transparent to a subtle dark fade */
+  .image-overlay {
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    padding: 16px;
+  }
+  
+  /* A lighter background for the time-slots area */
+  .time-slots-section {
+    background: #FFF9F4;
+    padding: 16px;
+  }
+  
+  /* Button styling for slots */
+  .slot-button {
+    transition: all 0.2s ease;
+    min-width: 80px;
+  
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
+  /* Booking dialog general style */
+  .booking-dialog {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 16px;
+  }
+  
+  /* Dialog header with a friendly primary color */
+  .dialog-header {
+    background-color: #FFAFBD; /* pastel pink tone */
+    border-radius: 16px 16px 0 0;
+    padding: 24px;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 600px) {
+    .date-selector .row {
+      flex-direction: column;
+    }
+  
+    .date-selector .q-btn {
+      width: 100%;
+      margin-top: 12px;
+    }
+  
+    .game-card {
+      margin-bottom: 24px;
+    }
+  
+    .dialog-header .text-h4 {
+      font-size: 1.5rem;
+    }
+  }
+  
