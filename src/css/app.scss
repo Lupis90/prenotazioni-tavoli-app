@@ -1,2 +1,63 @@
 // app global css in SCSS form
 @import './pages/prenota.scss';
+
+body {
+  &.body--dark {
+    --q-primary: #263238;
+    --q-secondary: #37474F;
+    --q-accent: #455A64;
+    --q-background: #121212;
+    --q-surface: #1E1E1E;
+
+    .q-card {
+      background: #1E1E1E;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      .q-card__section {
+        color: #fff;
+      }
+    }
+
+    .active-nav-item {
+      background: rgba(70, 70, 70, 0.15) !important;
+      border-left: 4px solid #666;
+      color: #aaa !important;
+
+      .q-icon {
+        color: #888 !important;
+      }
+    }
+
+    .q-item:hover:not(.active-nav-item) {
+      background: rgba(70, 70, 70, 0.08);
+    }
+
+    .text-deep-orange-9,
+    .text-deep-orange-7 {
+      color: #aaa !important;
+    }
+  }
+}
+
+.bg-dark {
+  background: #121212;
+}
+
+.bg-dark-drawer {
+  background: #1E1E1E;
+}
+
+.header-gradient-dark {
+  background: linear-gradient(135deg, #37474F, #263238);
+}
+
+// Aggiorna lo stile delle card per supportare il tema scuro
+.q-card {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+}

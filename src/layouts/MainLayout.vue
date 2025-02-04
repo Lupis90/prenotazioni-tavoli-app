@@ -1,6 +1,6 @@
 <template>
-  <q-layout view="lHh Lpr lFf" class="bg-warm-gray-1">
-    <q-header elevated class="header-gradient">
+  <q-layout :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
+    <q-header elevated :class="$q.dark.isActive ? 'header-gradient-dark' : 'header-gradient'">
       <q-toolbar class="q-py-md">
         <q-btn
           flat
@@ -45,6 +45,14 @@
           dense
           label="Login"
         />
+        <q-btn
+          flat
+          dense
+          round
+          :icon="$q.dark.isActive ? 'dark_mode' : 'light_mode'"
+          @click="$q.dark.toggle()"
+          aria-label="Toggle dark mode"
+        />
       </q-toolbar>
 
       <!-- Breadcrumbs sotto la toolbar -->
@@ -63,7 +71,7 @@
       v-model="leftDrawerOpen"
       show-if-above
       bordered
-      class="bg-white shadow-2"
+      :class="$q.dark.isActive ? 'bg-dark-drawer' : 'bg-white'"
       :width="280"
     >
       <q-list padding class="text-deep-orange-9">
@@ -97,7 +105,7 @@
       </q-list>
     </q-drawer>
 
-    <q-page-container class="bg-warm-gray-1">
+    <q-page-container :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
       <router-view class="q-pa-md" />
     </q-page-container>
   </q-layout>
@@ -242,6 +250,42 @@ export default defineComponent({
       color: rgba(255,255,255,0.5);
     }
   }
+}
+
+.header-gradient-dark {
+  background: linear-gradient(135deg, #333, #555);
+
+  .q-toolbar {
+    background: rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+  }
+
+  .q-avatar {
+    border: 2px solid rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: rgba(0,0,0,0.5);
+      transform: scale(1.05);
+    }
+  }
+
+  .q-breadcrumbs {
+    font-size: 0.8rem;
+    opacity: 0.8;
+
+    &__separator {
+      color: rgba(255,255,255,0.5);
+    }
+  }
+}
+
+.bg-dark {
+  background: #121212;
+}
+
+.bg-dark-drawer {
+  background: #1e1e1e;
 }
 
 .q-btn-group .q-btn {

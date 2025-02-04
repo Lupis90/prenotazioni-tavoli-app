@@ -36,7 +36,8 @@ const routes = [
       {
         path: 'load-new-games',
         name: 'load-new-games',
-        component: () => import('pages/LoadNewGames.vue')
+        component: () => import('pages/LoadNewGames.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   },

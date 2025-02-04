@@ -50,9 +50,9 @@
           class="col-12 col-sm-6 col-md-4"
         >
           <q-card
-            class="game-card"
-            v-touch-swipe.mouse.left="() => handleSwipe(game)"
-            v-ripple
+            :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'"
+            class="game-card cursor-pointer"
+            @click="openGameDetails(game)"
           >
             <q-img
               :src="getImageUrl(game.copertina)"
@@ -91,19 +91,19 @@
       </template>
     </transition-group>
 
-    <q-dialog v-model="showDialog">
-      <q-card class="q-pa-md" style="min-width: 300px">
+    <q-dialog v-model="showDialog" persistent>
+      <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">{{ selectedGame?.nome }}</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
           <q-img
-            :src="getImageUrl(selectedGame?.copertina)"
+            :src="selectedGame?.copertina ? getImageUrl(selectedGame.copertina) : ''"
             style="max-height: 200px; object-fit: contain"
             class="q-mb-md"
           />
-          <p class="text-body1">{{ selectedGame?.descrizione }}</p>
+          <p>{{ selectedGame?.descrizione }}</p>
 
           <div class="row q-mt-md">
             <div class="col-6">
@@ -171,6 +171,11 @@ export default defineComponent({
       showDialog.value = true;
     };
 
+    const openGameDetails = (game) => {
+      selectedGame.value = game;
+      showDialog.value = true;
+    };
+
     onMounted(async () => {
       loadingGiochi.value = true;
       try {
@@ -198,7 +203,8 @@ export default defineComponent({
       showGameDetails,
       viewType,
       showFilters,
-      filterAvailable
+      filterAvailable,
+      openGameDetails
     };
   },
 });

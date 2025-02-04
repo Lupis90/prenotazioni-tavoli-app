@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <q-page :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
     <!-- Hero Section -->
     <div class="hero-section text-center q-pa-xl">
       <h1 class="text-h2 text-weight-bold text-primary q-mb-md">
@@ -21,21 +21,21 @@
     <!-- Stats Section -->
     <div class="row q-col-gutter-md q-mt-xl">
       <div class="col-12 col-sm-4">
-        <q-card class="text-center q-pa-md">
+        <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="text-center q-pa-md">
           <q-icon name="sports_esports" size="3rem" color="primary" />
           <div class="text-h4 q-mt-sm text-weight-bold">50+</div>
           <div class="text-subtitle1">Giochi da Tavolo</div>
         </q-card>
       </div>
       <div class="col-12 col-sm-4">
-        <q-card class="text-center q-pa-md">
+        <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="text-center q-pa-md">
           <q-icon name="groups" size="3rem" color="primary" />
           <div class="text-h4 q-mt-sm text-weight-bold">1000+</div>
           <div class="text-subtitle1">Giocatori Felici</div>
         </q-card>
       </div>
       <div class="col-12 col-sm-4">
-        <q-card class="text-center q-pa-md">
+        <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="text-center q-pa-md">
           <q-icon name="event_available" size="3rem" color="primary" />
           <div class="text-h4 q-mt-sm text-weight-bold">24/7</div>
           <div class="text-subtitle1">Disponibilità</div>
@@ -48,7 +48,7 @@
       <h2 class="text-h4 text-center q-mb-lg">Giochi in Evidenza</h2>
       <div class="row q-col-gutter-lg">
         <div v-for="game in featuredGames" :key="game.id" class="col-12 col-sm-6 col-md-4">
-          <q-card class="game-card">
+          <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="game-card">
             <q-img :src="game.copertina" :ratio="16/9" />
             <q-card-section>
               <div class="text-h6">{{ game.nome }}</div>
@@ -126,6 +126,18 @@ export default defineComponent({
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  &.bg-dark-drawer {
+    .text-subtitle1,
+    .text-subtitle2,
+    .text-caption {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .q-separator {
+      background: rgba(255, 255, 255, 0.1);
+    }
   }
 }
 </style>

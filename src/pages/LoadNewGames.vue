@@ -103,15 +103,17 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { supabase } from 'src/supabase'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'LoadNewGames',
 
   setup() {
     const $q = useQuasar()
+    const router = useRouter()
     const loading = ref(false)
     const coverImage = ref(null)
     const imagePreview = ref(null)
@@ -138,6 +140,33 @@ export default {
         imagePreview.value = null
       }
     }
+
+    onMounted(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+
+        if (error || !profile?.is_admin) {
+          router.push('/')
+          $q.notify({
+            type: 'negative',
+            message: 'Accesso non autorizzato'
+          })
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error)
+        router.push('/')
+      }
+    })
 
     const submitGame = async () => {
       loading.value = true
