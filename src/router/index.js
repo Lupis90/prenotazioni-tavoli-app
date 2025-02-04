@@ -1,6 +1,7 @@
 import { defineRouter } from '#q-app/wrappers'
 import { createRouter, createMemoryHistory, createWebHistory, createWebHashHistory } from 'vue-router'
 import routes from './routes'
+import { supabase } from '../supabase'
 
 /*
  * If not building with SSR mode, you can
@@ -24,6 +25,17 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE)
+  })
+
+  Router.beforeEach(async (to, from, next) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const requiresAuth = to.name === 'prenota'
+
+    if (requiresAuth && !session) {
+      next({ name: 'login' })
+    } else {
+      next()
+    }
   })
 
   return Router

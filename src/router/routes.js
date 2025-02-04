@@ -17,6 +17,26 @@ const routes = [
         path: 'prenota',
         name: 'prenota',
         component: () => import('pages/PrenotaPage.vue')
+      },
+      {
+        path: 'login',
+        name: 'login',
+        component: () => import('pages/LoginPage.vue')
+      },
+      {
+        path: 'register',
+        name: 'register',
+        component: () => import('pages/RegisterPage.vue')
+      },
+      {
+        path: 'complete-profile',
+        name: 'complete-profile',
+        component: () => import('pages/ProfileCompletionPage.vue')
+      },
+      {
+        path: 'load-new-games',
+        name: 'load-new-games',
+        component: () => import('pages/LoadNewGames.vue')
       }
     ]
   },

@@ -26,23 +26,25 @@
         <q-space />
 
         <!-- Quick Actions -->
-        <div class="gt-xs">
-          <q-btn-group flat>
-            <q-btn flat round>
-              <q-avatar size="26px">
-                <img src="https://cdn.quasar.dev/img/boy-avatar.png">
-              </q-avatar>
-              <q-tooltip>Il mio profilo</q-tooltip>
-            </q-btn>
-            <q-btn flat round icon="notifications">
-              <q-badge color="red" floating>2</q-badge>
-              <q-tooltip>Notifiche</q-tooltip>
-            </q-btn>
-            <q-btn flat round icon="help">
-              <q-tooltip>Aiuto</q-tooltip>
-            </q-btn>
-          </q-btn-group>
+        <div v-if="isLoggedIn" class="row items-center q-gutter-sm">
+          <div class="text-subtitle2 q-mr-sm">
+            Ciao {{ userProfile?.user_name }},
+          </div>
+          <q-btn
+            flat
+            dense
+            round
+            icon="logout"
+            @click="handleLogout"
+          />
         </div>
+        <q-btn
+          v-else
+          to="/login"
+          flat
+          dense
+          label="Login"
+        />
       </q-toolbar>
 
       <!-- Breadcrumbs sotto la toolbar -->
@@ -102,15 +104,20 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { defineComponent, ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { supabase } from '../supabase';
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup() {
     const route = useRoute();
-    const leftDrawerOpen = ref(false)
+    const router = useRouter();
+    const leftDrawerOpen = ref(false);
+    const isLoggedIn = ref(false);
+    const userEmail = ref('');
+    const userProfile = ref(null);
     const navLinks = [
       {
         title: 'Home',
@@ -126,8 +133,39 @@ export default defineComponent({
         title: 'Prenota',
         icon: 'book_online',
         to: '/prenota'
+      },
+      {
+        title: 'Aggiungi Giochi',
+        icon: 'add_circle',
+        to: '/load-new-games'
       }
-    ]
+    ];
+
+    onMounted(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      isLoggedIn.value = !!session;
+      if (session?.user) {
+        userEmail.value = session.user.email;
+        const { data } = await supabase
+          .from('profiles')
+          .select('user_name')
+          .eq('id', session.user.id)
+          .single();
+        userProfile.value = data;
+      }
+    });
+
+    // Add auth state change listener
+    supabase.auth.onAuthStateChange((event, session) => {
+      isLoggedIn.value = !!session;
+      userEmail.value = session?.user?.email || '';
+    });
+
+    const handleLogout = async () => {
+      await supabase.auth.signOut();
+      userEmail.value = '';
+      router.push('/login');
+    };
 
     const currentRouteName = computed(() => {
       const name = route.name?.toString() || '';
@@ -138,10 +176,14 @@ export default defineComponent({
       leftDrawerOpen,
       navLinks,
       toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value
+        leftDrawerOpen.value = !leftDrawerOpen.value;
       },
-      currentRouteName
-    }
+      currentRouteName,
+      isLoggedIn,
+      userEmail,
+      userProfile,
+      handleLogout
+    };
   }
 });
 </script>
