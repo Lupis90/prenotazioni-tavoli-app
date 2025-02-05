@@ -78,7 +78,7 @@ export default defineConfig((/* ctx */) => {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
       config: {
-        dark: 'auto'
+        dark: 'false'
       },
       brand: {
         primary: '#FFAFBD',
@@ -98,7 +98,20 @@ export default defineConfig((/* ctx */) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify']
+      plugins: [
+        'Notify'
+      ],
+      components: [
+        'QDate',
+        'QCard',
+        'QCardSection',
+        'QCardActions',
+        'QInput',
+        'QBtn',
+        'QList',
+        'QItem',
+        'QItemSection'
+      ]
     },
 
     // animations: 'all', // --- includes all animations

@@ -80,7 +80,7 @@
         </q-item-label>
 
         <q-item
-          v-for="link in navLinks"
+          v-for="link in filteredNavLinks"
           :key="link.title"
           :to="link.to"
           clickable
@@ -126,6 +126,7 @@ export default defineComponent({
     const isLoggedIn = ref(false);
     const userEmail = ref('');
     const userProfile = ref(null);
+    const isAdmin = ref(false);
     const navLinks = [
       {
         title: 'Home',
@@ -146,6 +147,11 @@ export default defineComponent({
         title: 'Aggiungi Giochi',
         icon: 'add_circle',
         to: '/load-new-games'
+      },
+      {
+        title: 'Gestione Disponibilità',
+        icon: 'event_available',
+        to: '/admin-availability'
       }
     ];
 
@@ -156,17 +162,28 @@ export default defineComponent({
         userEmail.value = session.user.email;
         const { data } = await supabase
           .from('profiles')
-          .select('user_name')
+          .select('user_name, is_admin')
           .eq('id', session.user.id)
           .single();
         userProfile.value = data;
+        isAdmin.value = data?.is_admin || false;
       }
     });
 
     // Add auth state change listener
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       isLoggedIn.value = !!session;
       userEmail.value = session?.user?.email || '';
+      if (session?.user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('user_name, is_admin')
+          .eq('id', session.user.id)
+          .single();
+        isAdmin.value = data?.is_admin || false;
+      } else {
+        isAdmin.value = false;
+      }
     });
 
     const handleLogout = async () => {
@@ -180,6 +197,12 @@ export default defineComponent({
       return name.charAt(0).toUpperCase() + name.slice(1);
     });
 
+    const filteredNavLinks = computed(() => {
+      return navLinks.filter(link =>
+        link.title !== 'Gestione Disponibilità' || isAdmin.value
+      );
+    });
+
     return {
       leftDrawerOpen,
       navLinks,
@@ -190,7 +213,9 @@ export default defineComponent({
       isLoggedIn,
       userEmail,
       userProfile,
-      handleLogout
+      handleLogout,
+      isAdmin,
+      filteredNavLinks
     };
   }
 });
@@ -295,10 +320,4 @@ export default defineComponent({
     background: rgba(255,255,255,0.1);
   }
 }
-
-.text-caption {
-  opacity: 0.8;
-  font-size: 0.7rem;
-  letter-spacing: 0.5px;
-}
-</style>
+.text-caption {  opacity: 0.8;  font-size: 0.7rem;  letter-spacing: 0.5px;}</style>

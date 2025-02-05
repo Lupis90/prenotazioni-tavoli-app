@@ -38,6 +38,12 @@ const routes = [
         name: 'load-new-games',
         component: () => import('pages/LoadNewGames.vue'),
         meta: { requiresAdmin: true }
+      },
+      {
+        path: 'admin-availability',
+        name: 'admin-availability',
+        component: () => import('pages/AdminAvailability.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   },

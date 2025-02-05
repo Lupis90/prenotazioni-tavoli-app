@@ -4,28 +4,46 @@
     <div class="text-center q-mb-xl">
       <h2 class="text-gradient">Prenota il tuo gioco</h2>
       <img
-  src="/images/separator.svg"
-  alt="Decorative separator"
-  class="q-mt-md separator-image"
-  style="width: 640px; height: 96px;"
-/>
+        src="/images/separator.svg"
+        alt="Decorative separator"
+        class="q-mt-md separator-image"
+        style="width: 640px; height: 96px;"
+      />
     </div>
 
     <!-- Date Selection Card -->
     <div class="date-selector q-pa-md q-mb-lg shadow-3">
       <div class="row items-center q-gutter-md">
+        <!-- Utilizziamo un QInput con QDate in QMenu -->
         <q-input
-          filled
           v-model="selectedDate"
-          type="date"
           label="Seleziona data"
+          readonly
           class="col-grow"
           input-class="text-subtitle1"
+          :disable="loading"
+          @click.prevent
+          style="pointer-events: none"
         >
           <template v-slot:prepend>
-            <q-icon name="event" color="primary" />
+            <q-icon
+              name="event"
+              color="primary"
+              @click.stop="menu = true"
+              class="cursor-pointer"
+              style="pointer-events: auto"
+            />
           </template>
         </q-input>
+        <q-menu v-model="menu" cover transition-show="scale" transition-hide="scale">
+          <q-date
+            v-model="selectedDate"
+            :options="isDateAvailable"
+            mask="YYYY-MM-DD"
+            @input="onDateSelected"
+          />
+        </q-menu>
+
         <q-btn
           color="primary"
           label="Mostra disponibilità"
@@ -34,11 +52,12 @@
           class="q-px-xl"
           unelevated
           rounded
+          :disable="!selectedDate"
         />
       </div>
     </div>
 
-    <!-- Search and Filter Section - Mostra solo dopo aver caricato i giochi -->
+    <!-- Sezione per ricerca e filtri -->
     <div v-if="availableSlots.length" class="q-mb-md">
       <div class="row q-col-gutter-md items-center">
         <!-- Search Bar -->
@@ -56,17 +75,12 @@
           </q-input>
         </div>
 
-        <!-- Filter Button -->
+        <!-- Bottone per i filtri -->
         <div class="col-auto">
-          <q-btn-dropdown
-            dense
-            color="primary"
-            icon="filter_list"
-            label="Filtri"
-          >
+          <q-btn-dropdown dense color="primary" icon="filter_list" label="Filtri">
             <q-card style="min-width: 300px">
               <q-card-section>
-                <!-- Players Filter -->
+                <!-- Filtro per numero giocatori -->
                 <div class="q-mb-md">
                   <div class="text-subtitle2 q-mb-sm">Numero giocatori</div>
                   <div class="row q-gutter-sm">
@@ -89,7 +103,7 @@
                   </div>
                 </div>
 
-                <!-- Difficulty Filter -->
+                <!-- Filtro per difficoltà -->
                 <div>
                   <div class="text-subtitle2 q-mb-sm">Difficoltà</div>
                   <q-option-group
@@ -122,11 +136,7 @@
         class="col-12 col-sm-6 col-md-4"
       >
         <q-card class="game-card shadow-6">
-          <q-img
-            :src="game.copertina"
-            :ratio="16/9"
-            class="game-image"
-          >
+          <q-img :src="game.copertina" :ratio="16/9" class="game-image">
             <div class="absolute-bottom image-overlay">
               <div class="text-h5 text-white">{{ game.nome }}</div>
               <div class="text-caption text-grey-3">
@@ -138,7 +148,7 @@
           <q-card-section class="time-slots-section">
             <div class="row q-gutter-sm justify-center">
               <q-btn
-                v-for="slot in timeSlots"
+                v-for="slot in availableTimeSlots"
                 :key="slot"
                 :label="getSlotLabel(game, slot)"
                 :color="getSlotColor(game, slot)"
@@ -155,7 +165,7 @@
       </div>
     </div>
 
-    <!-- Empty State -->
+    <!-- Stato vuoto -->
     <div v-else class="text-center q-pa-xl">
       <q-icon name="sports_esports" size="xl" color="grey-4" />
       <div class="text-h6 text-grey-6 q-mt-md">
@@ -163,87 +173,76 @@
       </div>
     </div>
 
-    <!-- Booking Dialog -->
+    <!-- Dialog per la prenotazione -->
     <q-dialog v-model="showDialog">
-  <q-card class="booking-dialog" style="width: 600px; max-width: 90vw;">
-    <div class="dialog-header bg-primary text-white">
-      <q-card-section class="q-pa-md">
-        <div class="text-h5">Conferma prenotazione</div>
-      </q-card-section>
-    </div>
+      <q-card class="booking-dialog" style="width: 600px; max-width: 90vw;">
+        <div class="dialog-header bg-primary text-white">
+          <q-card-section class="q-pa-md">
+            <div class="text-h5">Conferma prenotazione</div>
+          </q-card-section>
+        </div>
 
-    <q-card-section class="q-pt-md">
-      <div class="text-center q-mb-md">
-        <div class="text-h6 text-primary">{{ selectedGame?.nome }}</div>
-        <q-chip color="accent" text-color="white" class="q-mt-xs" size="sm">
-          {{ selectedSlot }} • {{ selectedSlotInfo?.postiLiberi }} posti rimasti
-        </q-chip>
-      </div>
+        <q-card-section class="q-pt-md">
+          <div class="text-center q-mb-md">
+            <div class="text-h6 text-primary">{{ selectedGame?.nome }}</div>
+            <q-chip color="accent" text-color="white" class="q-mt-xs" size="sm">
+              {{ selectedSlot }} • {{ selectedSlotInfo?.postiLiberi }} posti rimasti
+            </q-chip>
+          </div>
 
-      <div class="q-gutter-y-md">
-        <q-input
-          filled
-          v-model.number="peopleCount"
-          type="number"
-          label="Numero di persone"
-          :rules="[val => validatePeopleCount(val)]"
-          color="primary"
-          dense
-        >
-          <template v-slot:prepend>
-            <q-icon name="people" />
-          </template>
-        </q-input>
+          <div class="q-gutter-y-md">
+            <q-input
+              filled
+              v-model.number="peopleCount"
+              type="number"
+              label="Numero di persone"
+              :rules="[val => validatePeopleCount(val)]"
+              color="primary"
+              dense
+            >
+              <template v-slot:prepend>
+                <q-icon name="people" />
+              </template>
+            </q-input>
 
-        <q-input
-          filled
-          v-model="nomeCliente"
-          label="Nome completo"
-          color="primary"
-          dense
-        >
-          <template v-slot:prepend>
-            <q-icon name="person" />
-          </template>
-        </q-input>
+            <q-input
+              filled
+              v-model="nomeCliente"
+              label="Nome completo"
+              color="primary"
+              dense
+            >
+              <template v-slot:prepend>
+                <q-icon name="person" />
+              </template>
+            </q-input>
 
-        <q-input
-          filled
-          v-model="emailCliente"
-          type="email"
-          label="Email"
-          color="primary"
-          dense
-        >
-          <template v-slot:prepend>
-            <q-icon name="email" />
-          </template>
-        </q-input>
-      </div>
-    </q-card-section>
+            <q-input
+              filled
+              v-model="emailCliente"
+              type="email"
+              label="Email"
+              color="primary"
+              dense
+            >
+              <template v-slot:prepend>
+                <q-icon name="email" />
+              </template>
+            </q-input>
+          </div>
+        </q-card-section>
 
-    <q-card-actions align="right" class="q-pa-md">
-      <q-btn
-        flat
-        label="Annulla"
-        color="grey"
-        v-close-popup
-        class="q-mr-sm"
-      />
-      <q-btn
-        label="Prenota"
-        color="primary"
-        @click="confirmBooking"
-        unelevated
-      />
-    </q-card-actions>
-  </q-card>
-</q-dialog>
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Annulla" color="grey" v-close-popup class="q-mr-sm" />
+          <q-btn label="Prenota" color="primary" @click="confirmBooking" unelevated />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script>
-import { defineComponent, ref, computed } from 'vue'
+import { defineComponent, ref, computed, onMounted } from 'vue'
 import { supabase } from 'src/supabase'
 import { useQuasar } from 'quasar'
 import quasarLang from 'quasar/lang/it'
@@ -253,13 +252,78 @@ export default defineComponent({
   setup() {
     const $q = useQuasar()
 
-    const selectedDate = ref(null)
-    const timeSlots = ['18:00', '19:00', '20:00', '21:00', '22:00']
+    // Stato per la selezione della data e per l'apertura del QDate
+    const selectedDate = ref('')
+    const menu = ref(false)
+    const availableDates = ref([])
+    const availableTimeRanges = ref([])
+
+    // Gli slot orari disponibili (dinamici, calcolati dalla disponibilità nel DB)
+    const availableTimeSlots = ref([])
+
+    // Carica dal DB le disponibilità (booking_availability)
+    const loadAvailableDatesAndTimes = async () => {
+      const { data, error } = await supabase
+        .from('booking_availability')
+        .select('*')
+
+      if (error) {
+        console.error(error)
+        $q.notify({
+          type: 'negative',
+          message: 'Errore nel caricamento delle disponibilità'
+        })
+        return
+      }
+
+      console.log('Loaded availability data:', data)
+      availableDates.value = data || []
+    }
+
+    // Verifica se una data è disponibile (usata dal QDate)
+    const isDateAvailable = (dateStr) => {
+      if (!dateStr || !availableDates.value.length) return false
+      const normalizedDate = dateStr.replace(/\//g, '-')
+      console.log(`Checking date ${normalizedDate}, database dates:`, availableDates.value.map(d => d.data))
+      const found = availableDates.value.some(d => d.data === normalizedDate)
+      console.log(`Date ${normalizedDate} available: ${found}`)
+      return found
+    }
+
+    // Quando una data viene selezionata, aggiorna gli slot in base ai blocchi orari disponibili
+    const onDateSelected = (date) => {
+      console.log('Date selected:', date)
+      selectedDate.value = date
+      menu.value = false
+
+      // Filtro dei blocchi per la data selezionata
+      const timeRanges = availableDates.value.filter(d => d.data === date)
+      console.log('Time ranges found:', timeRanges)
+      availableTimeRanges.value = timeRanges
+
+      // Genera gli slot orari dai blocchi e li accumula
+      const allSlots = []
+      timeRanges.forEach(range => {
+        const slots = generateSlots(range.orario_inizio, range.orario_fine)
+        allSlots.push(...slots)
+      })
+      // Rimuove i duplicati e ordina gli slot
+      availableTimeSlots.value = [...new Set(allSlots)].sort()
+
+      // Carica la disponibilità per la data selezionata
+      loadAvailability()
+    }
+
+    onMounted(() => {
+      loadAvailableDatesAndTimes()
+    })
+
+    // Stato per i giochi e per la prenotazione
     const availableSlots = ref([])
     const loading = ref(false)
     const slotsMap = ref({})
 
-    // Dialog state
+    // Stato per il dialog di prenotazione
     const showDialog = ref(false)
     const selectedGame = ref(null)
     const selectedSlot = ref(null)
@@ -268,7 +332,7 @@ export default defineComponent({
     const nomeCliente = ref('')
     const emailCliente = ref('')
 
-    // Add new reactive references for search and filters
+    // Filtri e ricerca
     const searchQuery = ref('')
     const filters = ref({
       minPlayers: null,
@@ -276,19 +340,14 @@ export default defineComponent({
       difficulty: []
     })
 
-    // Computed property for filtered games
     const filteredGames = computed(() => {
       let result = availableSlots.value
-
-      // Apply search filter
       if (searchQuery.value) {
         const search = searchQuery.value.toLowerCase()
         result = result.filter(game =>
           game.nome.toLowerCase().includes(search)
         )
       }
-
-      // Apply number of players filter - CORRETTO
       if (filters.value.minPlayers && filters.value.minPlayers > 0) {
         result = result.filter(game =>
           parseInt(game.giocatori_min) <= parseInt(filters.value.minPlayers)
@@ -299,18 +358,14 @@ export default defineComponent({
           parseInt(game.giocatori_max) >= parseInt(filters.value.maxPlayers)
         )
       }
-
-      // Apply difficulty filter
       if (filters.value.difficulty.length > 0) {
         result = result.filter(game =>
           filters.value.difficulty.includes(game.difficolta)
         )
       }
-
       return result
     })
 
-    // Reset filters function
     const resetFilters = () => {
       filters.value = {
         minPlayers: null,
@@ -319,25 +374,84 @@ export default defineComponent({
       }
     }
 
+    // Funzione helper per generare slot orari (step di 1 ora)
+    const generateSlots = (startTime, endTime) => {
+      let slots = []
+      const [startHour, startMin] = startTime.split(':').map(Number)
+      const [endHour, endMin] = endTime.split(':').map(Number)
+      let startMinutes = startHour * 60 + startMin
+      const endMinutes = endHour * 60 + endMin
+      while (startMinutes + 60 <= endMinutes) {
+        const h = Math.floor(startMinutes / 60)
+        const m = startMinutes % 60
+        const slotTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+        slots.push(slotTime)
+        startMinutes += 60
+      }
+      return slots
+    }
+
+    // Funzione per caricare la disponibilità per la data selezionata
     async function loadAvailability() {
       if (!selectedDate.value) {
         $q.notify({ type: 'warning', message: 'Seleziona prima una data' })
         return
       }
-
       loading.value = true
       availableSlots.value = []
       slotsMap.value = {}
+      availableTimeSlots.value = []
 
-      try {
-        const { data: giochi, error } = await supabase
-          .from('giochi')
-          .select('*')
-          .eq('disponibile', true)
+      // Assicuriamoci che la data sia nel formato YYYY-MM-DD
+      const formattedDate = selectedDate.value.split('T')[0]
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
+        console.error('Invalid date format:', selectedDate.value)
+        $q.notify({
+          type: 'negative',
+          message: 'Formato data non valido'
+        })
+        loading.value = false
+        return
+      }
 
-        if (error) throw error
+      // Carica i blocchi di disponibilità per la data selezionata
+      const { data: availabilityData, error: availabilityError } = await supabase
+        .from('booking_availability')
+        .select('*')
+        .eq('data', formattedDate)
 
-        const processedGames = await Promise.all(giochi.map(async (game) => {
+      if (availabilityError) {
+        console.error('Error loading availability:', availabilityError)
+        $q.notify({
+          type: 'negative',
+          message: 'Errore nel caricamento delle disponibilità'
+        })
+        loading.value = false
+        return
+      }
+
+      // Genera dinamicamente gli slot orari dai blocchi
+      let dynamicTimeSlots = []
+      availabilityData.forEach(block => {
+        const slots = generateSlots(block.orario_inizio, block.orario_fine)
+        dynamicTimeSlots = dynamicTimeSlots.concat(slots)
+      })
+      dynamicTimeSlots = [...new Set(dynamicTimeSlots)].sort()
+      availableTimeSlots.value = dynamicTimeSlots
+
+      // Carica i giochi disponibili
+      const { data: giochi, error } = await supabase
+        .from('giochi')
+        .select('*')
+        .eq('disponibile', true)
+      if (error) {
+        console.error(error)
+        $q.notify({ type: 'negative', message: 'Errore nel caricamento dei giochi' })
+        loading.value = false
+        return
+      }
+      const processedGames = await Promise.all(
+        giochi.map(async game => {
           if (game.copertina) {
             const { data: { publicUrl } } = supabase.storage
               .from('Copertine_giochi')
@@ -346,60 +460,58 @@ export default defineComponent({
           }
           return {
             ...game,
-            copertina: 'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png'
+            copertina:
+              'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png'
           }
-        }))
+        })
+      )
+      availableSlots.value = processedGames
 
-        availableSlots.value = processedGames
+      // Per ogni gioco e per ogni slot, calcola i posti liberi in base alle prenotazioni
+      for (const game of processedGames) {
+        slotsMap.value[game.id] = {}
+        for (const slot of availableTimeSlots.value) {
+          const startIso = `${formattedDate}T${slot}:00+01:00`
+          const startDateObj = new Date(startIso)
+          const durata = game.durata_media || 60
+          const endDateObj = new Date(startDateObj.getTime() + durata * 60000)
+          const endIso = endDateObj.toISOString()
 
-        for (const game of processedGames) {
-          slotsMap.value[game.id] = {}
-          for (const slot of timeSlots) {
-            const startIso = `${selectedDate.value}T${slot}:00+01:00`
-            const startDateObj = new Date(startIso)
-            const durata = game.durata_media || 60
-            const endDateObj = new Date(startDateObj.getTime() + durata * 60000)
-            const endIso = endDateObj.toISOString()
+          // Cerca prenotazioni che potrebbero bloccare questo slot
+          const { data: bookings, error: errBookings } = await supabase
+            .from('prenotazioni')
+            .select('numero_persone, data_inizio, data_fine')
+            .eq('gioco_id', game.id)
+            .eq('data_inizio', startIso)
 
-            const { data: bookings, error: errBookings } = await supabase
-              .from('prenotazioni')
-              .select('numero_persone, data_inizio, data_fine')
-              .eq('gioco_id', game.id)
-              .lt('data_inizio', endIso)
-              .gt('data_fine', startIso)
-
-            if (errBookings) throw errBookings
-
-            let postiLiberi = 0
-            if (bookings.length > 0) {
-              const [slotHourStr, slotMinuteStr] = slot.split(':')
-              const slotHour = parseInt(slotHourStr, 10)
-              const slotMinute = parseInt(slotMinuteStr, 10)
-
-              const sameSlotBookings = bookings.filter(b => {
-                const bStart = new Date(b.data_inizio)
-                return bStart.getHours() === slotHour && bStart.getMinutes() === slotMinute
-              })
-
-              if (sameSlotBookings.length > 0) {
-                const alreadyBookedExact = sameSlotBookings.reduce((acc, b) => acc + b.numero_persone, 0)
-                postiLiberi = game.giocatori_max - alreadyBookedExact
-              } else {
-                postiLiberi = 0
-              }
-            } else {
-              postiLiberi = game.giocatori_max
-            }
-
-            slotsMap.value[game.id][slot] = { postiLiberi }
+          if (errBookings) {
+            console.error(errBookings)
+            $q.notify({ type: 'negative', message: 'Errore nel calcolo disponibilità' })
           }
+
+          let postiLiberi = game.giocatori_max
+          if (bookings && bookings.length > 0) {
+            const postiOccupati = bookings.reduce((acc, booking) => acc + booking.numero_persone, 0)
+            postiLiberi = game.giocatori_max - postiOccupati
+          }
+
+          // Se ci sono già prenotazioni per slot precedenti che si sovrappongono, blocca questo slot
+          const { data: overlappingBookings } = await supabase
+            .from('prenotazioni')
+            .select('numero_persone, data_inizio, data_fine')
+            .eq('gioco_id', game.id)
+            .lt('data_inizio', startIso)
+            .gt('data_fine', startIso)
+            .or(`data_inizio.lt.${endIso},data_fine.gt.${startIso}`) // Aggiungiamo un controllo più preciso delle sovrapposizioni
+
+          if (overlappingBookings && overlappingBookings.length > 0) {
+            postiLiberi = 0
+          }
+
+          slotsMap.value[game.id][slot] = { postiLiberi }
         }
-      } catch (err) {
-        console.error(err)
-        $q.notify({ type: 'negative', message: 'Errore nel calcolo disponibilità' })
-      } finally {
-        loading.value = false
       }
+      loading.value = false
     }
 
     function getSlotInfo(game, slot) {
@@ -437,14 +549,24 @@ export default defineComponent({
     }
 
     async function confirmBooking() {
-      if (!selectedGame.value || !selectedSlot.value) return
+      if (!selectedGame.value || !selectedSlot.value || !selectedDate.value) return
 
       if (peopleCount.value > selectedSlotInfo.value.postiLiberi) {
         $q.notify({ type: 'negative', message: 'Posti insufficienti!' })
         return
       }
 
-      const startIso = `${selectedDate.value}T${selectedSlot.value}:00+01:00`
+      const formattedDate = selectedDate.value.split('T')[0]
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
+        console.error('Invalid date format:', selectedDate.value)
+        $q.notify({
+          type: 'negative',
+          message: 'Formato data non valido'
+        })
+        return
+      }
+
+      const startIso = `${formattedDate}T${selectedSlot.value}:00+01:00`
       const startDateObj = new Date(startIso)
       const durata = selectedGame.value.durata_media || 60
       const endDateObj = new Date(startDateObj.getTime() + durata * 60000)
@@ -453,15 +575,16 @@ export default defineComponent({
       try {
         const { error } = await supabase
           .from('prenotazioni')
-          .insert([{
-            gioco_id: selectedGame.value.id,
-            data_inizio: startIso,
-            data_fine: endIso,
-            nome_cliente: nomeCliente.value,
-            email_cliente: emailCliente.value,
-            numero_persone: peopleCount.value
-          }])
-
+          .insert([
+            {
+              gioco_id: selectedGame.value.id,
+              data_inizio: startIso,
+              data_fine: endIso,
+              nome_cliente: nomeCliente.value,
+              email_cliente: emailCliente.value,
+              numero_persone: peopleCount.value
+            }
+          ])
         if (error) throw error
 
         $q.notify({ type: 'positive', message: 'Prenotazione effettuata!' })
@@ -476,7 +599,8 @@ export default defineComponent({
     return {
       quasarLang,
       selectedDate,
-      timeSlots,
+      menu,
+      availableTimeSlots,
       availableSlots,
       showDialog,
       selectedGame,
@@ -495,7 +619,11 @@ export default defineComponent({
       searchQuery,
       filters,
       filteredGames,
-      resetFilters
+      resetFilters,
+      isDateAvailable,
+      onDateSelected,
+      availableTimeRanges,
+      loading,
     }
   }
 })
@@ -513,7 +641,6 @@ export default defineComponent({
   max-width: 300px;
 }
 
-/* Media query per schermi più piccoli */
 @media (max-width: 600px) {
   .search-input {
     max-width: 100%;
