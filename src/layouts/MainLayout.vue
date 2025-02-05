@@ -83,8 +83,8 @@
           v-for="link in filteredNavLinks"
           :key="link.title"
           :to="link.to"
-          clickable
           exact
+          clickable
           class="q-my-xs rounded-borders"
           active-class="active-nav-item"
         >
@@ -114,12 +114,14 @@
 <script>
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';  // Add this import
 import { supabase } from '../supabase';
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup() {
+    const $q = useQuasar();  // Add this line
     const route = useRoute();
     const router = useRouter();
     const leftDrawerOpen = ref(false);
@@ -203,11 +205,24 @@ export default defineComponent({
       );
     });
 
+    router.onError((error) => {
+      console.error('Navigation error:', error);
+      $q.notify({
+        type: 'warning',
+        message: 'Errore di navigazione, riprova'
+      });
+    });
+
     return {
       leftDrawerOpen,
       navLinks,
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value;
+        if (window.innerWidth < 1024) {
+          setTimeout(() => {
+            leftDrawerOpen.value = false;
+          }, 150);
+        }
       },
       currentRouteName,
       isLoggedIn,

@@ -40,7 +40,7 @@
 
 <script>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../supabase';
 import { Notify } from 'quasar';
 
@@ -50,6 +50,7 @@ export default {
     const email = ref('');
     const password = ref('');
     const router = useRouter();
+    const route = useRoute();
 
     const handleLogin = async () => {
       try {
@@ -66,7 +67,9 @@ export default {
           message: 'Login riuscito!'
         });
 
-        router.push({ name: 'Prenota' });
+        // After successful login, redirect to the original destination
+        const redirectPath = route.query.redirect || '/';
+        router.push(redirectPath);
       } catch (error) {
         Notify.create({
           type: 'negative',

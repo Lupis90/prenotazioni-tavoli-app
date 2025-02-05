@@ -16,7 +16,8 @@ const routes = [
       {
         path: 'prenota',
         name: 'prenota',
-        component: () => import('pages/PrenotaPage.vue')
+        component: () => import('pages/PrenotaPage.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path: 'login',
