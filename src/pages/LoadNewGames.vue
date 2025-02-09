@@ -141,7 +141,7 @@
 import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { supabase } from 'src/supabase'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'LoadNewGames',
@@ -149,7 +149,6 @@ export default {
   setup() {
     const $q = useQuasar()
     const router = useRouter()
-    const route = useRoute()
     const loading = ref(false)
     const coverImage = ref(null)
     const imagePreview = ref(null)
