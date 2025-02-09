@@ -112,23 +112,69 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted } from 'vue';
+import { defineComponent, ref, computed, onMounted} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';  // Add this import
+import { useQuasar } from 'quasar';
 import { supabase } from '../supabase';
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup() {
-    const $q = useQuasar();  // Add this line
+    const $q = useQuasar();
     const route = useRoute();
     const router = useRouter();
     const leftDrawerOpen = ref(false);
     const isLoggedIn = ref(false);
-    const userEmail = ref('');
     const userProfile = ref(null);
     const isAdmin = ref(false);
+
+    // Funzione dedicata per caricare il profilo utente
+    const loadUserProfile = async (userId) => {
+      if (!userId) {
+        userProfile.value = null;
+        isAdmin.value = false;
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_name, is_admin')
+          .eq('id', userId)
+          .single();
+
+        if (error) throw error;
+
+        userProfile.value = data;
+        isAdmin.value = data?.is_admin || false;
+      } catch (err) {
+        console.error('Error loading user profile:', err);
+        userProfile.value = null;
+        isAdmin.value = false;
+      }
+    };
+
+    // Watch per i cambiamenti nella sessione
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      isLoggedIn.value = !!session;
+      if (session?.user) {
+        await loadUserProfile(session.user.id);
+      } else {
+        userProfile.value = null;
+        isAdmin.value = false;
+      }
+    });
+
+    // Carica il profilo al mount
+    onMounted(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      isLoggedIn.value = !!session;
+      if (session?.user) {
+        await loadUserProfile(session.user.id);
+      }
+    });
+
     const navLinks = [
       {
         title: 'Home',
@@ -157,40 +203,9 @@ export default defineComponent({
       }
     ];
 
-    onMounted(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      isLoggedIn.value = !!session;
-      if (session?.user) {
-        userEmail.value = session.user.email;
-        const { data } = await supabase
-          .from('profiles')
-          .select('user_name, is_admin')
-          .eq('id', session.user.id)
-          .single();
-        userProfile.value = data;
-        isAdmin.value = data?.is_admin || false;
-      }
-    });
-
-    // Add auth state change listener
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      isLoggedIn.value = !!session;
-      userEmail.value = session?.user?.email || '';
-      if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('user_name, is_admin')
-          .eq('id', session.user.id)
-          .single();
-        isAdmin.value = data?.is_admin || false;
-      } else {
-        isAdmin.value = false;
-      }
-    });
-
     const handleLogout = async () => {
       await supabase.auth.signOut();
-      userEmail.value = '';
+      userProfile.value = null;
       router.push('/login');
     };
 
@@ -226,8 +241,7 @@ export default defineComponent({
       },
       currentRouteName,
       isLoggedIn,
-      userEmail,
-      userProfile,
+      userProfile, // esporta userProfile invece di userEmail
       handleLogout,
       isAdmin,
       filteredNavLinks

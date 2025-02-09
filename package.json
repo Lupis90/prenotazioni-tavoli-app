@@ -19,6 +19,7 @@
     "@quasar/extras": "^1.16.4",
     "@quasar/quasar-ui-qcalendar": "^4.1.0",
     "@supabase/supabase-js": "^2.48.0",
+    "aos": "^2.3.4",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
     "vue-router": "^4.0.0"
