@@ -15,7 +15,7 @@
         <!-- Logo e Titolo -->
         <div class="row items-center no-wrap">
           <q-avatar size="40px" class="q-mr-sm">
-            <img src="~assets/logo.png" alt="Logo">
+            <img src="~assets/logo.png" alt="Logo" />
           </q-avatar>
           <div>
             <div class="text-h5 text-weight-bold letter-spacing">LOG</div>
@@ -27,24 +27,10 @@
 
         <!-- Quick Actions -->
         <div v-if="isLoggedIn" class="row items-center q-gutter-sm">
-          <div class="text-subtitle2 q-mr-sm">
-            Ciao {{ userProfile?.user_name }},
-          </div>
-          <q-btn
-            flat
-            dense
-            round
-            icon="logout"
-            @click="handleLogout"
-          />
+          <div class="text-subtitle2 q-mr-sm">Ciao {{ userProfile?.user_name }},</div>
+          <q-btn flat dense round icon="logout" @click="handleLogout" />
         </div>
-        <q-btn
-          v-else
-          to="/login"
-          flat
-          dense
-          label="Login"
-        />
+        <q-btn v-else to="/login" flat dense label="Login" />
         <q-btn
           flat
           dense
@@ -59,10 +45,7 @@
       <q-toolbar class="bg-transparent text-white q-py-xs">
         <q-breadcrumbs>
           <q-breadcrumbs-el icon="home" to="/" />
-          <q-breadcrumbs-el
-            :label="currentRouteName"
-            :to="$route.path"
-          />
+          <q-breadcrumbs-el :label="currentRouteName" :to="$route.path" />
         </q-breadcrumbs>
       </q-toolbar>
     </q-header>
@@ -89,11 +72,7 @@
           active-class="active-nav-item"
         >
           <q-item-section avatar>
-            <q-icon
-              :name="link.icon"
-              size="sm"
-              color="deep-orange-7"
-            />
+            <q-icon :name="link.icon" size="sm" color="deep-orange-7" />
           </q-item-section>
 
           <q-item-section>
@@ -112,29 +91,29 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted} from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
-import { supabase } from '../supabase';
+import { defineComponent, ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { supabase } from '../supabase'
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup() {
-    const $q = useQuasar();
-    const route = useRoute();
-    const router = useRouter();
-    const leftDrawerOpen = ref(false);
-    const isLoggedIn = ref(false);
-    const userProfile = ref(null);
-    const isAdmin = ref(false);
+    const $q = useQuasar()
+    const route = useRoute()
+    const router = useRouter()
+    const leftDrawerOpen = ref(false)
+    const isLoggedIn = ref(false)
+    const userProfile = ref(null)
+    const isAdmin = ref(false)
 
     // Funzione dedicata per caricare il profilo utente
     const loadUserProfile = async (userId) => {
       if (!userId) {
-        userProfile.value = null;
-        isAdmin.value = false;
-        return;
+        userProfile.value = null
+        isAdmin.value = false
+        return
       }
 
       try {
@@ -142,101 +121,111 @@ export default defineComponent({
           .from('profiles')
           .select('user_name, is_admin')
           .eq('id', userId)
-          .single();
+          .single()
 
-        if (error) throw error;
+        if (error) throw error
 
-        userProfile.value = data;
-        isAdmin.value = data?.is_admin || false;
+        userProfile.value = data
+        isAdmin.value = data?.is_admin || false
       } catch (err) {
-        console.error('Error loading user profile:', err);
-        userProfile.value = null;
-        isAdmin.value = false;
+        console.error('Error loading user profile:', err)
+        userProfile.value = null
+        isAdmin.value = false
       }
-    };
+    }
 
     // Watch per i cambiamenti nella sessione
     supabase.auth.onAuthStateChange(async (event, session) => {
-      isLoggedIn.value = !!session;
+      isLoggedIn.value = !!session
       if (session?.user) {
-        await loadUserProfile(session.user.id);
+        await loadUserProfile(session.user.id)
       } else {
-        userProfile.value = null;
-        isAdmin.value = false;
+        userProfile.value = null
+        isAdmin.value = false
       }
-    });
+    })
 
     // Carica il profilo al mount
     onMounted(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      isLoggedIn.value = !!session;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      isLoggedIn.value = !!session
       if (session?.user) {
-        await loadUserProfile(session.user.id);
+        await loadUserProfile(session.user.id)
       }
-    });
+    })
 
     const navLinks = [
       {
         title: 'Home',
         icon: 'home',
-        to: '/'
+        to: '/',
       },
       {
         title: 'Giochi',
         icon: 'sports_esports',
-        to: '/giochi'
+        to: '/giochi',
       },
       {
         title: 'Prenota',
         icon: 'book_online',
-        to: '/prenota'
+        to: '/prenota',
       },
       {
         title: 'Aggiungi Giochi',
         icon: 'add_circle',
-        to: '/load-new-games'
+        to: '/load-new-games',
       },
       {
         title: 'Gestione Disponibilità',
         icon: 'event_available',
-        to: '/admin-availability'
-      }
-    ];
+        to: '/admin-availability',
+      },
+    ]
 
     const handleLogout = async () => {
-      await supabase.auth.signOut();
-      userProfile.value = null;
-      router.push('/login');
-    };
+      await supabase.auth.signOut()
+      userProfile.value = null
+      router.push('/login')
+    }
 
     const currentRouteName = computed(() => {
-      const name = route.name?.toString() || '';
-      return name.charAt(0).toUpperCase() + name.slice(1);
-    });
+      const name = route.name?.toString() || ''
+      return name.charAt(0).toUpperCase() + name.slice(1)
+    })
 
     const filteredNavLinks = computed(() => {
-      return navLinks.filter(link =>
-        link.title !== 'Gestione Disponibilità' || isAdmin.value
-      );
-    });
+      return navLinks.filter((link) => link.title !== 'Gestione Disponibilità' || isAdmin.value)
+    })
 
     router.onError((error) => {
-      console.error('Navigation error:', error);
+      console.error('Navigation error:', error)
       $q.notify({
         type: 'warning',
-        message: 'Errore di navigazione, riprova'
-      });
-    });
+        message: 'Errore di navigazione, riprova',
+      })
+    })
 
     return {
       leftDrawerOpen,
       navLinks,
       toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value;
-        if (window.innerWidth < 1024) {
+        leftDrawerOpen.value = !leftDrawerOpen.value
+        // Se il drawer è stato appena aperto e siamo su mobile
+        if (leftDrawerOpen.value && window.innerWidth < 1024) {
+          // Aggiungiamo un event listener per chiudere il drawer al click fuori
+          const closeDrawer = (e) => {
+            // Chiudi il drawer solo se il click è fuori dal drawer
+            if (!e.target.closest('.q-drawer')) {
+              leftDrawerOpen.value = false
+              document.removeEventListener('click', closeDrawer)
+            }
+          }
+          // Aggiungiamo il listener con un piccolo delay per evitare che si chiuda immediatamente
           setTimeout(() => {
-            leftDrawerOpen.value = false;
-          }, 150);
+            document.addEventListener('click', closeDrawer)
+          }, 300)
         }
       },
       currentRouteName,
@@ -244,10 +233,10 @@ export default defineComponent({
       userProfile, // esporta userProfile invece di userEmail
       handleLogout,
       isAdmin,
-      filteredNavLinks
-    };
-  }
-});
+      filteredNavLinks,
+    }
+  },
+})
 </script>
 
 <style lang="scss">
@@ -279,19 +268,19 @@ export default defineComponent({
 }
 
 .header-gradient {
-  background: linear-gradient(135deg, #FF8C69, #FF4081);
+  background: linear-gradient(135deg, #ff8c69, #ff4081);
 
   .q-toolbar {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(5px);
   }
 
   .q-avatar {
-    border: 2px solid rgba(255,255,255,0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
 
     &:hover {
-      border-color: rgba(255,255,255,0.5);
+      border-color: rgba(255, 255, 255, 0.5);
       transform: scale(1.05);
     }
   }
@@ -301,7 +290,7 @@ export default defineComponent({
     opacity: 0.8;
 
     &__separator {
-      color: rgba(255,255,255,0.5);
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 }
@@ -310,16 +299,16 @@ export default defineComponent({
   background: linear-gradient(135deg, #333, #555);
 
   .q-toolbar {
-    background: rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
   }
 
   .q-avatar {
-    border: 2px solid rgba(0,0,0,0.2);
+    border: 2px solid rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 
     &:hover {
-      border-color: rgba(0,0,0,0.5);
+      border-color: rgba(0, 0, 0, 0.5);
       transform: scale(1.05);
     }
   }
@@ -329,7 +318,7 @@ export default defineComponent({
     opacity: 0.8;
 
     &__separator {
-      color: rgba(255,255,255,0.5);
+      color: rgba(255, 255, 255, 0.5);
     }
   }
 }
@@ -346,7 +335,12 @@ export default defineComponent({
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
   }
 }
-.text-caption {  opacity: 0.8;  font-size: 0.7rem;  letter-spacing: 0.5px;}</style>
+.text-caption {
+  opacity: 0.8;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+</style>
