@@ -22,17 +22,9 @@
           class="col-grow"
           input-class="text-subtitle1"
           :disable="loading"
-          @click.prevent
-          style="pointer-events: none"
         >
           <template v-slot:prepend>
-            <q-icon
-              name="event"
-              color="primary"
-              @click.stop="menu = true"
-              class="cursor-pointer"
-              style="pointer-events: auto"
-            />
+            <q-icon name="event" color="primary" @click.stop="menu = true" class="cursor-pointer" />
           </template>
         </q-input>
         <q-menu v-model="menu" cover transition-show="scale" transition-hide="scale">
@@ -40,7 +32,7 @@
             v-model="selectedDate"
             :options="isDateAvailable"
             mask="YYYY-MM-DD"
-            @input="onDateSelected"
+            @update:model-value="onDateSelected"
           />
         </q-menu>
 
@@ -54,83 +46,6 @@
           rounded
           :disable="!selectedDate"
         />
-      </div>
-    </div>
-
-    <!-- Sezione per ricerca e filtri -->
-    <div v-if="availableSlots.length" class="q-mb-md">
-      <div class="row q-col-gutter-md items-center">
-        <!-- Game Selector Dropdown -->
-        <div class="col-grow">
-          <q-select
-            v-model="selectedGameToAdd"
-            :options="availableGamesOptions"
-            label="Aggiungi un gioco da prenotare"
-            outlined
-            dense
-            emit-value
-            map-options
-            clearable
-            @update:model-value="onGameSelected"
-          >
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey"> Nessun gioco disponibile </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
-        </div>
-
-        <!-- Bottone per i filtri -->
-        <div class="col-auto">
-          <q-btn-dropdown dense color="primary" icon="filter_list" label="Filtri">
-            <q-card style="min-width: 300px">
-              <q-card-section>
-                <!-- Filtro per numero giocatori -->
-                <div class="q-mb-md">
-                  <div class="text-subtitle2 q-mb-sm">Numero giocatori</div>
-                  <div class="row q-gutter-sm">
-                    <q-input
-                      v-model.number="filters.minPlayers"
-                      type="number"
-                      label="Min"
-                      dense
-                      outlined
-                      style="width: 100px"
-                    />
-                    <q-input
-                      v-model.number="filters.maxPlayers"
-                      type="number"
-                      label="Max"
-                      dense
-                      outlined
-                      style="width: 100px"
-                    />
-                  </div>
-                </div>
-
-                <!-- Filtro per difficoltà -->
-                <div>
-                  <div class="text-subtitle2 q-mb-sm">Difficoltà</div>
-                  <q-option-group
-                    v-model="filters.difficulty"
-                    :options="[
-                      { label: 'Facile', value: 'facile' },
-                      { label: 'Medio', value: 'medio' },
-                      { label: 'Difficile', value: 'difficile' },
-                    ]"
-                    type="checkbox"
-                    dense
-                  />
-                </div>
-              </q-card-section>
-
-              <q-card-actions align="right" class="q-pa-sm">
-                <q-btn flat label="Reset" color="grey" @click="resetFilters" />
-              </q-card-actions>
-            </q-card>
-          </q-btn-dropdown>
-        </div>
       </div>
     </div>
 
@@ -418,7 +333,7 @@ export default defineComponent({
       const normalizedDate = dateStr.replace(/\//g, '-')
       console.log(
         `Checking date ${normalizedDate}, database dates:`,
-        availableDates.value.map((d) => d.data)
+        availableDates.value.map((d) => d.data),
       )
       const found = availableDates.value.some((d) => d.data === normalizedDate)
       console.log(`Date ${normalizedDate} available: ${found}`)
@@ -429,7 +344,7 @@ export default defineComponent({
     const onDateSelected = (date) => {
       console.log('Date selected:', date)
       selectedDate.value = date
-      menu.value = false
+      menu.value = false // Chiude esplicitamente il menu
 
       // Filtro dei blocchi per la data selezionata
       const timeRanges = availableDates.value.filter((d) => d.data === date)
@@ -445,7 +360,9 @@ export default defineComponent({
       availableTimeSlots.value = [...new Set(allSlots)].sort()
 
       // Carica la disponibilità per la data selezionata
-      loadAvailability()
+      setTimeout(() => {
+        loadAvailability()
+      }, 100) // Piccolo delay per assicurarsi che il menu sia chiuso
     }
 
     onMounted(() => {
@@ -482,12 +399,12 @@ export default defineComponent({
       }
       if (filters.value.minPlayers && filters.value.minPlayers > 0) {
         result = result.filter(
-          (game) => parseInt(game.giocatori_min) <= parseInt(filters.value.minPlayers)
+          (game) => parseInt(game.giocatori_min) <= parseInt(filters.value.minPlayers),
         )
       }
       if (filters.value.maxPlayers && filters.value.maxPlayers > 0) {
         result = result.filter(
-          (game) => parseInt(game.giocatori_max) >= parseInt(filters.value.maxPlayers)
+          (game) => parseInt(game.giocatori_max) >= parseInt(filters.value.maxPlayers),
         )
       }
       if (filters.value.difficulty.length > 0) {
@@ -531,7 +448,7 @@ export default defineComponent({
       return availableSlots.value.filter((game) => {
         const gameSlots = slotsMap.value[game.id] || {}
         return Object.values(gameSlots).some(
-          (slot) => slot.postiLiberi > 0 && slot.postiLiberi < game.giocatori_max
+          (slot) => slot.postiLiberi > 0 && slot.postiLiberi < game.giocatori_max,
         )
       })
     })
@@ -541,7 +458,7 @@ export default defineComponent({
       return availableSlots.value.filter(
         (game) =>
           selectedGames.value.has(game.id) &&
-          !partiallyOccupiedGames.value.some((g) => g.id === game.id)
+          !partiallyOccupiedGames.value.some((g) => g.id === game.id),
       )
     })
 
@@ -560,6 +477,8 @@ export default defineComponent({
 
     // Funzione per caricare la disponibilità per la data selezionata
     async function loadAvailability() {
+      // Prevent the calendar from reopening when clicking "Mostra disponibilità"
+      menu.value = false
       if (!selectedDate.value) {
         $q.notify({ type: 'warning', message: 'Seleziona prima una data' })
         return
@@ -662,7 +581,7 @@ export default defineComponent({
               'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png',
             hasActiveBookings,
           }
-        })
+        }),
       )
       availableSlots.value = processedGames
 
@@ -699,7 +618,11 @@ export default defineComponent({
           const overlappingBookings = gameBookings.filter((b) => {
             const bStart = new Date(b.data_inizio)
             const bEnd = new Date(b.data_fine)
-            return (bStart < slotEnd && bEnd > slotStart) && (bStart.toISOString() !== slotStart.toISOString())
+            return (
+              bStart < slotEnd &&
+              bEnd > slotStart &&
+              bStart.toISOString() !== slotStart.toISOString()
+            )
           })
           if (overlappingBookings.length > 0) {
             freeSeats = 0

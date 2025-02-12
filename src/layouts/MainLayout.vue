@@ -207,25 +207,26 @@ export default defineComponent({
       })
     })
 
+    const addMobileDrawerClickOutside = () => {
+      setTimeout(() => {
+        const handleClickOutside = (e) => {
+          if (!e.target.closest('.q-drawer')) {
+            leftDrawerOpen.value = false
+            document.removeEventListener('click', handleClickOutside)
+          }
+        }
+        document.addEventListener('click', handleClickOutside)
+      }, 300)
+    }
+
     return {
       leftDrawerOpen,
       navLinks,
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value
-        // Se il drawer è stato appena aperto e siamo su mobile
+
         if (leftDrawerOpen.value && window.innerWidth < 1024) {
-          // Aggiungiamo un event listener per chiudere il drawer al click fuori
-          const closeDrawer = (e) => {
-            // Chiudi il drawer solo se il click è fuori dal drawer
-            if (!e.target.closest('.q-drawer')) {
-              leftDrawerOpen.value = false
-              document.removeEventListener('click', closeDrawer)
-            }
-          }
-          // Aggiungiamo il listener con un piccolo delay per evitare che si chiuda immediatamente
-          setTimeout(() => {
-            document.addEventListener('click', closeDrawer)
-          }, 300)
+          addMobileDrawerClickOutside()
         }
       },
       currentRouteName,
