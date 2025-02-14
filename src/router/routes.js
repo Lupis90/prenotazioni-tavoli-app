@@ -45,6 +45,12 @@ const routes = [
         name: 'admin-availability',
         component: () => import('pages/AdminAvailability.vue'),
         meta: { requiresAdmin: true }
+      },
+      {
+        path: 'admin-dashboard',
+        name: 'admin-dashboard',
+        component: () => import('pages/AdminDashboard.vue'),
+        meta: { requiresAdmin: true }
       }
     ]
   },

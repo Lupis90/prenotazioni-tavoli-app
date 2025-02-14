@@ -62,6 +62,16 @@
           <q-item-label header class="text-weight-bold text-deep-orange-7 q-pb-none">
             NAVIGATION
           </q-item-label>
+          <q-item v-if="isAdmin" clickable :to="'/admin-dashboard'" class="q-my-xs rounded-borders" active-class="active-nav-item">
+            <q-item-section avatar>
+              <q-icon name="dashboard" size="sm" color="deep-orange-7" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label class="text-subtitle1 text-weight-medium">
+                Dashboard Admin
+              </q-item-label>
+            </q-item-section>
+          </q-item>
 
           <q-item
             v-for="link in navLinks"
