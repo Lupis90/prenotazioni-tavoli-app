@@ -1,97 +1,102 @@
 <template>
-  <q-layout :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
-    <q-header elevated :class="$q.dark.isActive ? 'header-gradient-dark' : 'header-gradient'">
-      <q-toolbar class="q-py-md">
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-          class="q-mr-sm"
-        />
+  <div v-if="!loading">
+    <q-layout :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
+      <q-header elevated :class="$q.dark.isActive ? 'header-gradient-dark' : 'header-gradient'">
+        <q-toolbar class="q-py-md">
+          <q-btn
+            flat
+            dense
+            round
+            icon="menu"
+            aria-label="Menu"
+            @click="toggleLeftDrawer"
+            class="q-mr-sm"
+            ref="menuButton"
+          />
 
-        <!-- Logo e Titolo -->
-        <div class="row items-center no-wrap">
-          <q-avatar size="40px" class="q-mr-sm">
-            <img src="~assets/logo.png" alt="Logo" />
-          </q-avatar>
-          <div>
-            <div class="text-h5 text-weight-bold letter-spacing">LOG</div>
-            <div class="text-caption">Life of Gamers</div>
+          <div class="row items-center no-wrap">
+            <q-avatar size="40px" class="q-mr-sm">
+              <img src="~assets/logo.png" alt="Logo" />
+            </q-avatar>
+            <div>
+              <div class="text-h5 text-weight-bold letter-spacing">LOG</div>
+              <div class="text-caption">Life of Gamers</div>
+            </div>
           </div>
-        </div>
 
-        <q-space />
+          <q-space />
 
-        <!-- Quick Actions -->
-        <div v-if="isLoggedIn" class="row items-center q-gutter-sm">
-          <div class="text-subtitle2 q-mr-sm">Ciao {{ userProfile?.user_name }},</div>
-          <q-btn flat dense round icon="logout" @click="handleLogout" />
-        </div>
-        <q-btn v-else to="/login" flat dense label="Login" />
-        <q-btn
-          flat
-          dense
-          round
-          :icon="$q.dark.isActive ? 'dark_mode' : 'light_mode'"
-          @click="$q.dark.toggle()"
-          aria-label="Toggle dark mode"
-        />
-      </q-toolbar>
+          <div v-if="isLoggedIn" class="row items-center q-gutter-sm">
+            <div v-if="userProfile" class="text-subtitle2 q-mr-sm">Ciao {{ userProfile.user_name }},</div>
+            <div v-else class="text-subtitle2 q-mr-sm">Loading...</div>
+            <q-btn flat dense round icon="logout" @click="handleLogout" ref="logoutButton" />
+          </div>
+          <q-btn v-else to="/login" flat dense label="Login" />
+          <q-btn
+            flat
+            dense
+            round
+            :icon="$q.dark.isActive ? 'dark_mode' : 'light_mode'"
+            @click="toggleDarkMode"
+            aria-label="Toggle dark mode"
+            ref="darkModeButton"
+          />
+        </q-toolbar>
 
-      <!-- Breadcrumbs sotto la toolbar -->
-      <q-toolbar class="bg-transparent text-white q-py-xs">
-        <q-breadcrumbs>
-          <q-breadcrumbs-el icon="home" to="/" />
-          <q-breadcrumbs-el :label="currentRouteName" :to="$route.path" />
-        </q-breadcrumbs>
-      </q-toolbar>
-    </q-header>
+        <q-toolbar class="bg-transparent text-white q-py-xs">
+          <q-breadcrumbs>
+            <q-breadcrumbs-el icon="home" to="/" />
+            <q-breadcrumbs-el :label="currentRouteName" :to="$route.path" />
+          </q-breadcrumbs>
+        </q-toolbar>
+      </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-      :class="$q.dark.isActive ? 'bg-dark-drawer' : 'bg-white'"
-      :width="280"
-    >
-      <q-list padding class="text-deep-orange-9">
-        <q-item-label header class="text-weight-bold text-deep-orange-7 q-pb-none">
-          NAVIGATION
-        </q-item-label>
+      <q-drawer
+        v-model="leftDrawerOpen"
+        show-if-above
+        bordered
+        :class="$q.dark.isActive ? 'bg-dark-drawer' : 'bg-white'"
+        :width="280"
+      >
+        <q-list padding class="text-deep-orange-9">
+          <q-item-label header class="text-weight-bold text-deep-orange-7 q-pb-none">
+            NAVIGATION
+          </q-item-label>
 
-        <q-item
-          v-for="link in filteredNavLinks"
-          :key="link.title"
-          :to="link.to"
-          exact
-          clickable
-          class="q-my-xs rounded-borders"
-          active-class="active-nav-item"
-        >
-          <q-item-section avatar>
-            <q-icon :name="link.icon" size="sm" color="deep-orange-7" />
-          </q-item-section>
+          <q-item
+            v-for="link in navLinks"
+            :key="link.title"
+            :to="link.to"
+            exact
+            clickable
+            class="q-my-xs rounded-borders"
+            active-class="active-nav-item"
+            v-show="link.title !== 'Aggiungi Giochi' && link.title !== 'Gestione Disponibilità' || isAdmin"
+          >
+            <q-item-section avatar>
+              <q-icon :name="link.icon" size="sm" color="deep-orange-7" />
+            </q-item-section>
 
-          <q-item-section>
-            <q-item-label class="text-subtitle1 text-weight-medium">
-              {{ link.title }}
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-      </q-list>
-    </q-drawer>
+            <q-item-section>
+              <q-item-label class="text-subtitle1 text-weight-medium">
+                {{ link.title }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-drawer>
 
-    <q-page-container :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
-      <router-view class="q-pa-md" />
-    </q-page-container>
-  </q-layout>
+      <q-page-container :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
+        <router-view class="q-pa-md" />
+      </q-page-container>
+    </q-layout>
+  </div>
+  <div v-else>
+    Loading... </div>
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted } from 'vue'
+import { defineComponent, ref, computed, onMounted, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { supabase } from '../supabase'
@@ -105,142 +110,134 @@ export default defineComponent({
     const router = useRouter()
     const leftDrawerOpen = ref(false)
     const isLoggedIn = ref(false)
-    const userProfile = ref(null)
-    const isAdmin = ref(false)
+    const userProfile = ref(null);
+    const isAdmin = ref(false);
+    const loading = ref(true); // NEW: Loading state
 
-    // Funzione dedicata per caricare il profilo utente
-    const loadUserProfile = async (userId) => {
-      if (!userId) {
-        userProfile.value = null
-        isAdmin.value = false
-        return
-      }
+    const menuButton = ref(null);
+    const logoutButton = ref(null);
+    const darkModeButton = ref(null);
 
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('user_name, is_admin')
-          .eq('id', userId)
-          .single()
+    const addEventListeners = () => {
+      menuButton.value?.addEventListener('click', toggleLeftDrawer);
+      logoutButton.value?.addEventListener('click', handleLogout);
+      darkModeButton.value?.addEventListener('click', toggleDarkMode);
+    };
 
-        if (error) throw error
+    const removeEventListeners = () => {
+      menuButton.value?.removeEventListener('click', toggleLeftDrawer);
+      logoutButton.value?.removeEventListener('click', handleLogout);
+      darkModeButton.value?.removeEventListener('click', toggleDarkMode);
+    };
 
-        userProfile.value = data
-        isAdmin.value = data?.is_admin || false
-      } catch (err) {
-        console.error('Error loading user profile:', err)
-        userProfile.value = null
-        isAdmin.value = false
-      }
-    }
-
-    // Watch per i cambiamenti nella sessione
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      isLoggedIn.value = !!session
-      if (session?.user) {
-        await loadUserProfile(session.user.id)
-      } else {
-        userProfile.value = null
-        isAdmin.value = false
-      }
-    })
-
-    // Carica il profilo al mount
     onMounted(async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      isLoggedIn.value = !!session
+      // Get initial session
+      const { data: { session } } = await supabase.auth.getSession();
+      isLoggedIn.value = !!session;
+
+      // Load user profile if logged in
       if (session?.user) {
-        await loadUserProfile(session.user.id)
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('user_name, is_admin')
+            .eq('id', session.user.id)
+            .single();
+
+          if (error) throw error;
+          userProfile.value = data;
+          isAdmin.value = data?.is_admin || false;
+        } catch (err) {
+          console.error('Error loading user profile:', err);
+        }
       }
-    })
+
+      loading.value = false; // Set loading to false *after* auth check
+    });
+
+    onActivated(async () => {
+        await nextTick(); // No authReady check needed
+        addEventListeners();
+
+    });
+
+    onDeactivated(() => {
+      removeEventListeners();
+    });
 
     const navLinks = [
-      {
-        title: 'Home',
-        icon: 'home',
-        to: '/',
-      },
-      {
-        title: 'Giochi',
-        icon: 'sports_esports',
-        to: '/giochi',
-      },
-      {
-        title: 'Prenota',
-        icon: 'book_online',
-        to: '/prenota',
-      },
-      {
-        title: 'Aggiungi Giochi',
-        icon: 'add_circle',
-        to: '/load-new-games',
-      },
-      {
-        title: 'Gestione Disponibilità',
-        icon: 'event_available',
-        to: '/admin-availability',
-      },
-    ]
+      { title: 'Home', icon: 'home', to: '/' },
+      { title: 'Giochi', icon: 'sports_esports', to: '/giochi' },
+      { title: 'Prenota', icon: 'book_online', to: '/prenota' },
+      { title: 'Aggiungi Giochi', icon: 'add_circle', to: '/load-new-games' },
+      { title: 'Gestione Disponibilità', icon: 'event_available', to: '/admin-availability' },
+    ];
 
     const handleLogout = async () => {
-      await supabase.auth.signOut()
-      userProfile.value = null
-      router.push('/login')
+      await supabase.auth.signOut();
+      isLoggedIn.value = false;
+      userProfile.value = null;
+      isAdmin.value = false;
+      router.push('/login');
+    };
+
+    const toggleDarkMode = () => {
+      $q.dark.toggle();
     }
 
     const currentRouteName = computed(() => {
-      const name = route.name?.toString() || ''
-      return name.charAt(0).toUpperCase() + name.slice(1)
-    })
-
-    const filteredNavLinks = computed(() => {
-      return navLinks.filter((link) => link.title !== 'Gestione Disponibilità' || isAdmin.value)
-    })
+      const name = route.name?.toString() || '';
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    });
 
     router.onError((error) => {
-      console.error('Navigation error:', error)
+      console.error('Navigation error:', error);
       $q.notify({
         type: 'warning',
         message: 'Errore di navigazione, riprova',
-      })
-    })
+      });
+    });
 
     const addMobileDrawerClickOutside = () => {
       setTimeout(() => {
         const handleClickOutside = (e) => {
           if (!e.target.closest('.q-drawer')) {
-            leftDrawerOpen.value = false
-            document.removeEventListener('click', handleClickOutside)
+            leftDrawerOpen.value = false;
+            document.removeEventListener('click', handleClickOutside);
           }
-        }
-        document.addEventListener('click', handleClickOutside)
-      }, 300)
+        };
+        document.addEventListener('click', handleClickOutside);
+      }, 300);
+    };
+
+    const toggleLeftDrawer = () => {
+      leftDrawerOpen.value = !leftDrawerOpen.value;
+      if (leftDrawerOpen.value && window.innerWidth < 1024) {
+        addMobileDrawerClickOutside();
+      }
     }
 
     return {
       leftDrawerOpen,
       navLinks,
-      toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-
-        if (leftDrawerOpen.value && window.innerWidth < 1024) {
-          addMobileDrawerClickOutside()
-        }
-      },
+      toggleLeftDrawer,
       currentRouteName,
       isLoggedIn,
-      userProfile, // esporta userProfile invece di userEmail
+      userProfile,
       handleLogout,
       isAdmin,
-      filteredNavLinks,
-    }
+      toggleDarkMode,
+      menuButton,
+      logoutButton,
+      darkModeButton,
+      loading, // Expose the loading state
+    };
   },
-})
+});
 </script>
 
 <style lang="scss">
+/* Your styles remain the same */
 .letter-spacing {
   letter-spacing: 0.5px;
 }

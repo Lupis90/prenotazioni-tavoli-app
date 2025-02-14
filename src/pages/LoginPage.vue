@@ -22,7 +22,7 @@
               required
             />
             <div class="q-mt-md">
-              <q-btn type="submit" label="Login" color="primary" unelevated />
+              <q-btn type="submit" label="Login" color="primary" unelevated :loading="loading" />
             </div>
           </q-form>
         </q-card-section>
@@ -40,7 +40,7 @@
 
 <script>
 import { ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { supabase } from '../supabase';
 import { Notify } from 'quasar';
 
@@ -50,9 +50,10 @@ export default {
     const email = ref('');
     const password = ref('');
     const router = useRouter();
-    const route = useRoute();
+    const loading = ref(false); // Add loading state
 
     const handleLogin = async () => {
+      loading.value = true; // Set loading to true
       try {
         // Sign in user
         const { error: authError } = await supabase.auth.signInWithPassword({
@@ -60,21 +61,26 @@ export default {
           password: password.value,
         });
 
-        if (authError) throw authError;
+        if (authError) {
+            loading.value = false; // Set loading to false in case of error
+            throw authError
+        };
 
         Notify.create({
           type: 'positive',
           message: 'Login riuscito!'
         });
 
-        // After successful login, redirect to the original destination
-        const redirectPath = route.query.redirect || '/';
-        router.push(redirectPath);
+        // After successful login, reload the page
+        window.location.href = "/";
+
       } catch (error) {
         Notify.create({
           type: 'negative',
           message: error.message || 'Errore durante il login. Riprova più tardi.'
         });
+          loading.value = false;//set loading to false when an error shows up
+
       }
     };
 
@@ -87,6 +93,7 @@ export default {
       password,
       handleLogin,
       goToRegister,
+        loading
     };
   },
 };
