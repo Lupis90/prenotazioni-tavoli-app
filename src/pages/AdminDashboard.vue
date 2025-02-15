@@ -2,7 +2,7 @@
   <div class="admin-dashboard">
     <h1>Dashboard Amministrativa</h1>
 
-    <!-- Calendario per filtrare -->
+    <!-- Calendario per selezionare la data -->
     <section class="date-filter q-mb-lg">
       <div class="row items-center q-gutter-md">
         <q-input
@@ -18,124 +18,80 @@
           </template>
         </q-input>
         <q-menu v-model="menu" cover transition-show="scale" transition-hide="scale">
-          <q-date
-            v-model="selectedDate"
-            :options="isDateAvailable"
-            mask="YYYY-MM-DD"
-            @update:model-value="onDateSelected"
-          />
+          <q-date v-model="selectedDate" mask="YYYY-MM-DD" @update:model-value="onDateSelected" />
         </q-menu>
       </div>
+    </section>
+
+    <!-- Totale persone prenotate per la data selezionata -->
+    <section v-if="selectedDate" class="total-people q-mt-lg">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">
+            Totale persone prenotate il {{ selectedDate }}:
+            <strong>{{ totalPeopleForSelectedDate }}</strong>
+          </div>
+        </q-card-section>
+      </q-card>
     </section>
 
     <!-- Sezione Giochi Prenotati -->
     <section v-if="selectedDate" class="games-bookings q-mt-lg">
       <h2>Giochi Prenotati per {{ selectedDate }}</h2>
-      <div class="row q-col-gutter-md">
-        <div v-for="game in gamesWithBookings" :key="game.id" class="col-12 col-md-6 col-lg-4">
-          <q-card
-            class="game-card cursor-pointer"
-            :class="{ selected: selectedGameId === game.id }"
-            @click="selectGame(game.id)"
-          >
-            <q-img :src="game.copertina" :ratio="16 / 9">
-              <div class="absolute-bottom text-subtitle2 text-center bg-black-6">
-                {{ game.nome }}
-              </div>
-            </q-img>
-            <q-card-section>
-              <div class="text-h6">Prenotazioni</div>
-              <div class="q-gutter-sm">
-                <q-chip
-                  v-for="slot in game.slots"
-                  :key="slot.time"
-                  color="primary"
-                  text-color="white"
-                >
-                  {{ slot.time }} - {{ slot.persone }} persone
-                </q-chip>
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-      </div>
-    </section>
-
-    <!-- Lista Prenotazioni -->
-    <section v-if="selectedGameBookings.length" class="reservations q-mt-xl">
-      <h2>Dettagli Prenotazioni per {{ selectedGameName }}</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Data Inizio</th>
-            <th>Nome Cliente</th>
-            <th>Email Cliente</th>
-            <th>Numero Persone</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="reservation in selectedGameBookings" :key="reservation.id">
-            <td>{{ reservation.id }}</td>
-            <td>{{ formatDateTime(reservation.data_inizio) }}</td>
-            <td>
-              <div v-if="editingReservation?.id === reservation.id">
-                <q-input v-model="editingReservation.nome_cliente" dense outlined />
-              </div>
-              <div v-else>{{ reservation.nome_cliente }}</div>
-            </td>
-            <td>
-              <div v-if="editingReservation?.id === reservation.id">
-                <q-input v-model="editingReservation.email_cliente" dense outlined type="email" />
-              </div>
-              <div v-else>{{ reservation.email_cliente }}</div>
-            </td>
-            <td>
-              <div v-if="editingReservation?.id === reservation.id">
-                <q-input
-                  v-model.number="editingReservation.numero_persone"
-                  dense
-                  outlined
-                  type="number"
+      <q-list bordered separator class="full-width">
+        <template v-for="game in gamesWithBookings" :key="game.id">
+          <q-expansion-item group="games" :class="{ 'bg-blue-1': selectedGameId === game.id }">
+            <template v-slot:header>
+              <q-item-section avatar>
+                <q-img
+                  :src="game.copertina"
+                  alt="Copertina gioco"
+                  style="width: 80px; height: 80px; object-fit: cover"
                 />
-              </div>
-              <div v-else>{{ reservation.numero_persone }}</div>
-            </td>
-            <td>
-              <div v-if="editingReservation?.id === reservation.id">
-                <q-btn flat color="positive" icon="check" @click="saveReservation">Salva</q-btn>
-                <q-btn flat color="negative" icon="close" @click="cancelEdit">Annulla</q-btn>
-              </div>
-              <div v-else>
-                <q-btn flat color="primary" icon="edit" @click="startEdit(reservation)"
-                  >Modifica</q-btn
-                >
-                <q-btn flat color="negative" icon="delete" @click="confirmDelete(reservation)"
-                  >Cancella</q-btn
-                >
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-h6">{{ game.nome }}</q-item-label>
+                <q-item-label caption>
+                  <div class="row q-gutter-sm q-mt-sm">
+                    <q-chip
+                      v-for="slot in game.slots"
+                      :key="slot.time"
+                      color="primary"
+                      text-color="white"
+                      size="sm"
+                    >
+                      {{ slot.time }} - {{ slot.persone }} persone
+                    </q-chip>
+                  </div>
+                </q-item-label>
+              </q-item-section>
+            </template>
+
+            <!-- Contenuto espanso -->
+            <q-card>
+              <q-card-section>
+                <div class="text-h6">Dettaglio Prenotazioni</div>
+                <q-list dense>
+                  <q-item v-for="slot in game.slots" :key="slot.time">
+                    <q-item-section>
+                      <q-item-label>
+                        <div class="row items-center justify-between">
+                          <div class="text-weight-medium">Orario: {{ slot.time }}</div>
+                          <div>
+                            <q-icon name="people" size="sm" class="q-mr-xs" />
+                            {{ slot.persone }} persone
+                          </div>
+                        </div>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card-section>
+            </q-card>
+          </q-expansion-item>
+        </template>
+      </q-list>
     </section>
-
-    <!-- Dialog di conferma eliminazione -->
-    <q-dialog v-model="showDeleteDialog">
-      <q-card>
-        <q-card-section class="row items-center">
-          <div class="text-h6">Conferma eliminazione</div>
-        </q-card-section>
-
-        <q-card-section> Sei sicuro di voler eliminare questa prenotazione? </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Annulla" color="primary" v-close-popup />
-          <q-btn flat label="Elimina" color="negative" @click="deleteReservation" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </div>
 </template>
 
@@ -153,35 +109,10 @@ export default {
     const menu = ref(false)
     const gamesWithBookings = ref([])
     const selectedGameId = ref(null)
-    const editingReservation = ref(null)
-    const showDeleteDialog = ref(false)
-    const reservationToDelete = ref(null)
-    const availableDates = ref([])
+    const totalPeopleForSelectedDate = ref(0)
     const loading = ref(false)
 
-    // Computed property per ottenere le prenotazioni del gioco selezionato
-    const selectedGameBookings = computed(() => {
-      if (!selectedGameId.value) return []
-      return reservations.value.filter(
-        (r) =>
-          r.gioco_id === selectedGameId.value && r.data_inizio.split('T')[0] === selectedDate.value,
-      )
-    })
-
-    const selectedGameName = computed(() => {
-      const game = gamesWithBookings.value.find((g) => g.id === selectedGameId.value)
-      return game ? game.nome : ''
-    })
-
-    const fetchReservations = async () => {
-      let { data, error } = await supabase.from('prenotazioni').select('*, giochi:gioco_id(nome)')
-      if (error) {
-        console.error('Error fetching prenotazioni:', error)
-      } else {
-        reservations.value = data
-      }
-    }
-
+    // Funzione per recuperare le prenotazioni della data selezionata
     const fetchGameBookings = async (dateStr) => {
       const startOfDay = `${dateStr}T00:00:00`
       const endOfDay = `${dateStr}T23:59:59`
@@ -189,23 +120,24 @@ export default {
       const { data, error } = await supabase
         .from('prenotazioni')
         .select(
-          `
-          *,
-          giochi:gioco_id (
-            id,
-            nome,
-            copertina
-          )
-        `,
+          `id, numero_persone, data_inizio, gioco_id,
+          giochi:gioco_id ( id, nome, copertina )`,
         )
         .gte('data_inizio', startOfDay)
         .lte('data_inizio', endOfDay)
 
       if (error) {
-        console.error('Error fetching game bookings:', error)
+        console.error('Errore nel recupero delle prenotazioni:', error)
         return
       }
 
+      // Calcola il totale delle persone prenotate in questa data
+      totalPeopleForSelectedDate.value = data.reduce(
+        (acc, booking) => acc + booking.numero_persone,
+        0,
+      )
+
+      // Organizza le prenotazioni per gioco
       const gameBookings = {}
       for (const booking of data) {
         const gameId = booking.gioco_id
@@ -226,10 +158,7 @@ export default {
         if (existingSlot) {
           existingSlot.persone += booking.numero_persone
         } else {
-          gameBookings[gameId].slots.push({
-            time: timeSlot,
-            persone: booking.numero_persone,
-          })
+          gameBookings[gameId].slots.push({ time: timeSlot, persone: booking.numero_persone })
         }
       }
 
@@ -240,108 +169,7 @@ export default {
       gamesWithBookings.value = Object.values(gameBookings)
     }
 
-    const selectGame = (gameId) => {
-      selectedGameId.value = gameId === selectedGameId.value ? null : gameId
-    }
-
-    const startEdit = (reservation) => {
-      editingReservation.value = { ...reservation }
-    }
-
-    const cancelEdit = () => {
-      editingReservation.value = null
-    }
-
-    const saveReservation = async () => {
-      try {
-        const { error } = await supabase
-          .from('prenotazioni')
-          .update({
-            nome_cliente: editingReservation.value.nome_cliente,
-            email_cliente: editingReservation.value.email_cliente,
-            numero_persone: editingReservation.value.numero_persone,
-          })
-          .eq('id', editingReservation.value.id)
-
-        if (error) throw error
-
-        // Aggiorna i dati
-        await fetchReservations()
-        await fetchGameBookings(selectedDate.value)
-
-        editingReservation.value = null
-        $q.notify({
-          type: 'positive',
-          message: 'Prenotazione aggiornata con successo',
-        })
-      } catch (error) {
-        console.error('Error updating reservation:', error)
-        $q.notify({
-          type: 'negative',
-          message: "Errore durante l'aggiornamento della prenotazione",
-        })
-      }
-    }
-
-    const confirmDelete = (reservation) => {
-      reservationToDelete.value = reservation
-      showDeleteDialog.value = true
-    }
-
-    const deleteReservation = async () => {
-      try {
-        const { error } = await supabase
-          .from('prenotazioni')
-          .delete()
-          .eq('id', reservationToDelete.value.id)
-
-        if (error) throw error
-
-        // Aggiorna i dati
-        await fetchReservations()
-        await fetchGameBookings(selectedDate.value)
-
-        $q.notify({
-          type: 'positive',
-          message: 'Prenotazione eliminata con successo',
-        })
-      } catch (error) {
-        console.error('Error deleting reservation:', error)
-        $q.notify({
-          type: 'negative',
-          message: "Errore durante l'eliminazione della prenotazione",
-        })
-      }
-    }
-
-    const loadAvailableDatesAndTimes = async () => {
-      loading.value = true
-      const { data, error } = await supabase.from('booking_availability').select('*')
-      if (error) {
-        console.error(error)
-        $q.notify({
-          type: 'negative',
-          message: 'Errore nel caricamento delle disponibilità',
-        })
-        return
-      }
-      console.log('Loaded availability data:', data)
-      availableDates.value = data || []
-      loading.value = false
-    }
-
-    const isDateAvailable = (dateStr) => {
-      if (!dateStr || !availableDates.value.length) return false
-      const normalizedDate = dateStr.replace(/\//g, '-')
-      console.log(
-        `Checking date ${normalizedDate}, database dates:`,
-        availableDates.value.map((d) => d.data),
-      )
-      const found = availableDates.value.some((d) => d.data === normalizedDate)
-      console.log(`Date ${normalizedDate} available: ${found}`)
-      return found
-    }
-
+    // Quando l'utente seleziona una nuova data dal calendario
     const onDateSelected = async (newDate) => {
       selectedDate.value = newDate
       selectedGameId.value = null
@@ -349,35 +177,24 @@ export default {
       await fetchGameBookings(newDate)
     }
 
-    const formatDateTime = (dateTime) => {
-      const date = new Date(dateTime)
-      return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`
+    // Seleziona un gioco per visualizzare i dettagli
+    const selectGame = (gameId) => {
+      selectedGameId.value = gameId === selectedGameId.value ? null : gameId
     }
 
     onMounted(() => {
-      loadAvailableDatesAndTimes()
-      fetchReservations()
+      selectedDate.value = new Date().toISOString().split('T')[0] // Imposta la data di oggi come default
+      fetchGameBookings(selectedDate.value)
     })
 
     return {
-      reservations,
       selectedDate,
       menu,
       gamesWithBookings,
       selectedGameId,
-      selectedGameBookings,
-      selectedGameName,
-      editingReservation,
-      showDeleteDialog,
+      totalPeopleForSelectedDate,
       onDateSelected,
       selectGame,
-      startEdit,
-      cancelEdit,
-      saveReservation,
-      confirmDelete,
-      deleteReservation,
-      formatDateTime,
-      isDateAvailable,
       loading,
     }
   },
@@ -393,43 +210,17 @@ export default {
   max-width: 300px;
 }
 
-.game-card {
-  height: 100%;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
+.total-people q-card {
+  background: #f5f5f5;
+  text-align: center;
+  padding: 10px;
 }
 
-.game-card.selected {
-  border-color: var(--q-primary);
-  transform: translateY(-4px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.q-expansion-item {
+  margin-bottom: 4px;
 }
 
-.game-card:hover {
-  transform: translateY(-4px);
-}
-
-.game-card .q-chip {
-  font-size: 0.9em;
-  align-items: center;
-  display: flex;
-  min-height: 32px;
-}
-
-.reservations td > div {
-  text-align: left;
-  padding: 8px;
-  border: 1px solid #ccc;
-}
-
-.reservations td,
-.reservations th {
-  margin-bottom: 20px;
-}
-
-.reservations table {
-  border-collapse: collapse;
-  width: 100%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.q-expansion-item__content {
+  background-color: rgba(0, 0, 0, 0.03);
 }
 </style>
