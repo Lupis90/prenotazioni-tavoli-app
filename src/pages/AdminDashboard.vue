@@ -11,13 +11,19 @@
           readonly
           class="col-grow"
           input-class="text-subtitle1"
+          :disable="loading"
         >
           <template v-slot:prepend>
             <q-icon name="event" color="primary" @click.stop="menu = true" class="cursor-pointer" />
           </template>
         </q-input>
         <q-menu v-model="menu" cover transition-show="scale" transition-hide="scale">
-          <q-date v-model="selectedDate" mask="YYYY-MM-DD" @update:model-value="onDateSelected" />
+          <q-date
+            v-model="selectedDate"
+            :options="isDateAvailable"
+            mask="YYYY-MM-DD"
+            @update:model-value="onDateSelected"
+          />
         </q-menu>
       </div>
     </section>
@@ -29,10 +35,10 @@
         <div v-for="game in gamesWithBookings" :key="game.id" class="col-12 col-md-6 col-lg-4">
           <q-card
             class="game-card cursor-pointer"
-            :class="{ 'selected': selectedGameId === game.id }"
+            :class="{ selected: selectedGameId === game.id }"
             @click="selectGame(game.id)"
           >
-            <q-img :src="game.copertina" :ratio="16/9">
+            <q-img :src="game.copertina" :ratio="16 / 9">
               <div class="absolute-bottom text-subtitle2 text-center bg-black-6">
                 {{ game.nome }}
               </div>
@@ -87,7 +93,12 @@
             </td>
             <td>
               <div v-if="editingReservation?.id === reservation.id">
-                <q-input v-model.number="editingReservation.numero_persone" dense outlined type="number" />
+                <q-input
+                  v-model.number="editingReservation.numero_persone"
+                  dense
+                  outlined
+                  type="number"
+                />
               </div>
               <div v-else>{{ reservation.numero_persone }}</div>
             </td>
@@ -97,8 +108,12 @@
                 <q-btn flat color="negative" icon="close" @click="cancelEdit">Annulla</q-btn>
               </div>
               <div v-else>
-                <q-btn flat color="primary" icon="edit" @click="startEdit(reservation)">Modifica</q-btn>
-                <q-btn flat color="negative" icon="delete" @click="confirmDelete(reservation)">Cancella</q-btn>
+                <q-btn flat color="primary" icon="edit" @click="startEdit(reservation)"
+                  >Modifica</q-btn
+                >
+                <q-btn flat color="negative" icon="delete" @click="confirmDelete(reservation)"
+                  >Cancella</q-btn
+                >
               </div>
             </td>
           </tr>
@@ -113,9 +128,7 @@
           <div class="text-h6">Conferma eliminazione</div>
         </q-card-section>
 
-        <q-card-section>
-          Sei sicuro di voler eliminare questa prenotazione?
-        </q-card-section>
+        <q-card-section> Sei sicuro di voler eliminare questa prenotazione? </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat label="Annulla" color="primary" v-close-popup />
@@ -145,27 +158,27 @@ export default {
     const editingReservation = ref(null)
     const showDeleteDialog = ref(false)
     const reservationToDelete = ref(null)
+    const availableDates = ref([])
+    const loading = ref(false)
 
     // Computed property per ottenere le prenotazioni del gioco selezionato
     const selectedGameBookings = computed(() => {
       if (!selectedGameId.value) return []
-      return reservations.value.filter(r =>
-        r.gioco_id === selectedGameId.value &&
-        r.data_inizio.split('T')[0] === selectedDate.value
+      return reservations.value.filter(
+        (r) =>
+          r.gioco_id === selectedGameId.value && r.data_inizio.split('T')[0] === selectedDate.value,
       )
     })
 
     const selectedGameName = computed(() => {
-      const game = gamesWithBookings.value.find(g => g.id === selectedGameId.value)
+      const game = gamesWithBookings.value.find((g) => g.id === selectedGameId.value)
       return game ? game.nome : ''
     })
 
     const fetchReservations = async () => {
-      let { data, error } = await supabase
-        .from('prenotazioni')
-        .select('*, giochi:gioco_id(nome)')
+      let { data, error } = await supabase.from('prenotazioni').select('*, giochi:gioco_id(nome)')
       if (error) {
-        console.error("Error fetching prenotazioni:", error)
+        console.error('Error fetching prenotazioni:', error)
       } else {
         reservations.value = data
       }
@@ -177,19 +190,21 @@ export default {
 
       const { data, error } = await supabase
         .from('prenotazioni')
-        .select(`
+        .select(
+          `
           *,
           giochi:gioco_id (
             id,
             nome,
             copertina
           )
-        `)
+        `,
+        )
         .gte('data_inizio', startOfDay)
         .lte('data_inizio', endOfDay)
 
       if (error) {
-        console.error("Error fetching game bookings:", error)
+        console.error('Error fetching game bookings:', error)
         return
       }
 
@@ -200,21 +215,22 @@ export default {
           gameBookings[gameId] = {
             id: gameId,
             nome: booking.giochi.nome,
-            copertina: booking.giochi.copertina ?
-              supabase.storage.from('Copertine_giochi').getPublicUrl(booking.giochi.copertina).data.publicUrl :
-              'default-game-cover.png',
-            slots: []
+            copertina: booking.giochi.copertina
+              ? supabase.storage.from('Copertine_giochi').getPublicUrl(booking.giochi.copertina)
+                  .data.publicUrl
+              : 'default-game-cover.png',
+            slots: [],
           }
         }
 
         const timeSlot = booking.data_inizio.split('T')[1].substring(0, 5)
-        const existingSlot = gameBookings[gameId].slots.find(s => s.time === timeSlot)
+        const existingSlot = gameBookings[gameId].slots.find((s) => s.time === timeSlot)
         if (existingSlot) {
           existingSlot.persone += booking.numero_persone
         } else {
           gameBookings[gameId].slots.push({
             time: timeSlot,
-            persone: booking.numero_persone
+            persone: booking.numero_persone,
           })
         }
       }
@@ -245,7 +261,7 @@ export default {
           .update({
             nome_cliente: editingReservation.value.nome_cliente,
             email_cliente: editingReservation.value.email_cliente,
-            numero_persone: editingReservation.value.numero_persone
+            numero_persone: editingReservation.value.numero_persone,
           })
           .eq('id', editingReservation.value.id)
 
@@ -258,13 +274,13 @@ export default {
         editingReservation.value = null
         $q.notify({
           type: 'positive',
-          message: 'Prenotazione aggiornata con successo'
+          message: 'Prenotazione aggiornata con successo',
         })
       } catch (error) {
         console.error('Error updating reservation:', error)
         $q.notify({
           type: 'negative',
-          message: 'Errore durante l\'aggiornamento della prenotazione'
+          message: "Errore durante l'aggiornamento della prenotazione",
         })
       }
     }
@@ -289,21 +305,50 @@ export default {
 
         $q.notify({
           type: 'positive',
-          message: 'Prenotazione eliminata con successo'
+          message: 'Prenotazione eliminata con successo',
         })
       } catch (error) {
         console.error('Error deleting reservation:', error)
         $q.notify({
           type: 'negative',
-          message: 'Errore durante l\'eliminazione della prenotazione'
+          message: "Errore durante l'eliminazione della prenotazione",
         })
       }
     }
 
-    const onDateSelected = (newDate) => {
+    const loadAvailableDatesAndTimes = async () => {
+      loading.value = true
+      const { data, error } = await supabase.from('booking_availability').select('*')
+      if (error) {
+        console.error(error)
+        $q.notify({
+          type: 'negative',
+          message: 'Errore nel caricamento delle disponibilità',
+        })
+        return
+      }
+      console.log('Loaded availability data:', data)
+      availableDates.value = data || []
+      loading.value = false
+    }
+
+    const isDateAvailable = (dateStr) => {
+      if (!dateStr || !availableDates.value.length) return false
+      const normalizedDate = dateStr.replace(/\//g, '-')
+      console.log(
+        `Checking date ${normalizedDate}, database dates:`,
+        availableDates.value.map((d) => d.data),
+      )
+      const found = availableDates.value.some((d) => d.data === normalizedDate)
+      console.log(`Date ${normalizedDate} available: ${found}`)
+      return found
+    }
+
+    const onDateSelected = async (newDate) => {
       selectedDate.value = newDate
       selectedGameId.value = null
-      fetchGameBookings(newDate)
+      menu.value = false // Chiude il menu del calendario
+      await fetchGameBookings(newDate)
     }
 
     const formatDateTime = (dateTime) => {
@@ -312,6 +357,7 @@ export default {
     }
 
     onMounted(() => {
+      loadAvailableDatesAndTimes()
       fetchReservations()
     })
 
@@ -332,9 +378,11 @@ export default {
       saveReservation,
       confirmDelete,
       deleteReservation,
-      formatDateTime
+      formatDateTime,
+      isDateAvailable,
+      loading,
     }
-  }
+  },
 }
 </script>
 
@@ -361,29 +409,29 @@ export default {
 
 .game-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.reservations table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-.reservations th,
-.reservations td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
-}
-
-.reservations td > div {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
 }
 
 .game-card .q-chip {
   font-size: 0.9em;
+  align-items: center;
+  display: flex;
+  min-height: 32px;
+}
+
+.reservations td > div {
+  text-align: left;
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.reservations td,
+.reservations th {
+  margin-bottom: 20px;
+}
+
+.reservations table {
+  border-collapse: collapse;
+  width: 100%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
