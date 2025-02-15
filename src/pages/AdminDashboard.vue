@@ -141,9 +141,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import Chart from 'chart.js/auto'
 import { supabase } from '../supabase'
-import { date } from 'quasar'
 import { useQuasar } from 'quasar'
 
 export default {
