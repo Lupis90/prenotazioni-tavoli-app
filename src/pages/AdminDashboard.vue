@@ -2,42 +2,54 @@
   <div class="admin-dashboard">
     <h1>Dashboard Amministrativa</h1>
 
-    <!-- Calendario per selezionare la data -->
-    <section class="date-filter q-mb-lg">
-      <div class="row items-center q-gutter-md">
-        <q-input
+    <div class="row q-col-gutter-md">
+      <section class="date-filter col-auto q-mb-lg">
+        <q-date
           v-model="selectedDate"
-          label="Seleziona data"
-          readonly
-          class="col-grow"
-          input-class="text-subtitle1"
-          :disable="loading"
+          mask="YYYY-MM-DD"
+          :options="isValidDate"
+          emit-immediately
+          @update:model-value="onDateSelected"
+        />
+      </section>
+
+      <section v-if="selectedDate" class="total-people col-auto q-mb-lg">
+        <q-card>
+          <q-card-section>
+            <div class="text-h6">
+              Totale persone prenotate il {{ formatDate(selectedDate) }}:
+              <strong>{{ totalPeopleForSelectedDate }}</strong>
+            </div>
+          </q-card-section>
+        </q-card>
+      </section>
+    </div>
+
+    <div class="row q-col-gutter-md">
+      <section class="daily-bookings col q-mt-lg">
+        <h2>Prenotazioni Giornaliere</h2>
+        <q-table
+          :rows="dailyBookings"
+          :columns="dailyBookingsColumns"
+          row-key="date"
+          :loading="loading"
         >
-          <template v-slot:prepend>
-            <q-icon name="event" color="primary" @click.stop="menu = true" class="cursor-pointer" />
+          <template v-slot:body="props">
+            <q-tr :props="props" :class="getRowClass(props.row)">
+              <q-td key="date" :props="props">
+                {{ formatDate(props.row.date) }}
+              </q-td>
+              <q-td key="totalBookings" :props="props">
+                {{ props.row.totalBookings }}
+              </q-td>
+            </q-tr>
           </template>
-        </q-input>
-        <q-menu v-model="menu" cover transition-show="scale" transition-hide="scale">
-          <q-date v-model="selectedDate" mask="YYYY-MM-DD" @update:model-value="onDateSelected" />
-        </q-menu>
-      </div>
-    </section>
+        </q-table>
+      </section>
+    </div>
 
-    <!-- Totale persone prenotate per la data selezionata -->
-    <section v-if="selectedDate" class="total-people q-mt-lg">
-      <q-card>
-        <q-card-section>
-          <div class="text-h6">
-            Totale persone prenotate il {{ selectedDate }}:
-            <strong>{{ totalPeopleForSelectedDate }}</strong>
-          </div>
-        </q-card-section>
-      </q-card>
-    </section>
-
-    <!-- Sezione Giochi Prenotati -->
     <section v-if="selectedDate" class="games-bookings q-mt-lg">
-      <h2>Giochi Prenotati per {{ selectedDate }}</h2>
+      <h2>Giochi Prenotati per {{ formatDate(selectedDate) }}</h2>
       <q-list bordered separator class="full-width">
         <template v-for="game in gamesWithBookings" :key="game.id">
           <q-expansion-item group="games" :class="{ 'bg-blue-1': selectedGameId === game.id }">
@@ -67,7 +79,6 @@
               </q-item-section>
             </template>
 
-            <!-- Contenuto espanso -->
             <q-card>
               <q-card-section>
                 <div class="text-h6">Dettaglio Prenotazioni</div>
@@ -98,20 +109,74 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
+import { date } from 'quasar' // Importa date utilities da Quasar
 
 export default {
   name: 'AdminDashboard',
   setup() {
-
     const selectedDate = ref('')
-    const menu = ref(false)
     const gamesWithBookings = ref([])
     const selectedGameId = ref(null)
     const totalPeopleForSelectedDate = ref(0)
     const loading = ref(false)
 
-    // Funzione per recuperare le prenotazioni della data selezionata
+    // Prenotazioni giornaliere
+    const dailyBookings = ref([])
+    const dailyBookingsColumns = [
+      { name: 'date', label: 'Data', field: 'date', align: 'left' },
+      {
+        name: 'totalBookings',
+        label: 'Totale Prenotazioni',
+        field: 'totalBookings',
+        align: 'center',
+      },
+    ]
+
+    const isValidDate = (date) => {
+      const today = new Date()
+      const selected = new Date(date)
+      return selected >= today
+    }
+
+    // Funzione per formattare la data
+    const formatDate = (dateStr) => {
+      return date.formatDate(dateStr, 'DD/MM/YYYY') // Usa Quasar date utilities
+    }
+
+    const fetchDailyBookings = async () => {
+      loading.value = true
+      const { data, error } = await supabase
+        .from('prenotazioni')
+        .select('data_inizio, numero_persone', { count: 'exact' })
+        .order('data_inizio', { ascending: false }) // Ordina per data
+
+      if (error) {
+        console.error('Errore nel recupero delle prenotazioni giornaliere:', error)
+        loading.value = false
+        return
+      }
+
+      const bookingsByDate = {}
+
+      // Itera attraverso i dati e raggruppa per data
+      data.forEach((booking) => {
+        const dateOnly = booking.data_inizio.split('T')[0] // Estrai solo la data (YYYY-MM-DD)
+        if (!bookingsByDate[dateOnly]) {
+          bookingsByDate[dateOnly] = 0
+        }
+        bookingsByDate[dateOnly] += booking.numero_persone
+      })
+
+      // Trasforma l'oggetto in un array per la tabella
+      dailyBookings.value = Object.entries(bookingsByDate).map(([date, totalBookings]) => ({
+        date,
+        totalBookings,
+      }))
+      loading.value = false
+    }
+
     const fetchGameBookings = async (dateStr) => {
+      loading.value = true // Mostra il loader
       const startOfDay = `${dateStr}T00:00:00`
       const endOfDay = `${dateStr}T23:59:59`
 
@@ -126,16 +191,15 @@ export default {
 
       if (error) {
         console.error('Errore nel recupero delle prenotazioni:', error)
+        loading.value = false // Nascondi il loader in caso di errore
         return
       }
 
-      // Calcola il totale delle persone prenotate in questa data
       totalPeopleForSelectedDate.value = data.reduce(
         (acc, booking) => acc + booking.numero_persone,
         0,
       )
 
-      // Organizza le prenotazioni per gioco
       const gameBookings = {}
       for (const booking of data) {
         const gameId = booking.gioco_id
@@ -165,35 +229,54 @@ export default {
       }
 
       gamesWithBookings.value = Object.values(gameBookings)
+      loading.value = false // Nascondi il loader dopo aver caricato i dati
     }
 
-    // Quando l'utente seleziona una nuova data dal calendario
     const onDateSelected = async (newDate) => {
       selectedDate.value = newDate
       selectedGameId.value = null
-      menu.value = false // Chiude il menu del calendario
+      // menu.value = false // Non più necessario
       await fetchGameBookings(newDate)
     }
 
-    // Seleziona un gioco per visualizzare i dettagli
     const selectGame = (gameId) => {
       selectedGameId.value = gameId === selectedGameId.value ? null : gameId
     }
+    // Funzione per la formattazione condizionale delle righe
+    const getRowClass = (row) => {
+      const total = row.totalBookings
+      if (total >= 0 && total <= 6) {
+        return 'bg-green-2' // Verde chiaro
+      } else if (total >= 7 && total <= 12) {
+        return 'bg-yellow-2' // Giallo chiaro
+      } else if (total >= 13 && total <= 16) {
+        return 'bg-orange-2' //Arancione
+      } else if (total > 16) {
+        return 'bg-red-2' // Rosso chiaro
+      }
+      return '' // Nessuna classe aggiuntiva
+    }
 
-    onMounted(() => {
-      selectedDate.value = new Date().toISOString().split('T')[0] // Imposta la data di oggi come default
-      fetchGameBookings(selectedDate.value)
+    onMounted(async () => {
+      const today = new Date().toISOString().split('T')[0]
+      selectedDate.value = today
+      await fetchDailyBookings() // Carica le prenotazioni giornaliere
+      await fetchGameBookings(today)
     })
 
     return {
       selectedDate,
-      menu,
       gamesWithBookings,
       selectedGameId,
       totalPeopleForSelectedDate,
       onDateSelected,
       selectGame,
       loading,
+      dailyBookings, // Per la tabella
+      dailyBookingsColumns, // Colonne della tabella
+      formatDate, // Funzione per formattare
+      isValidDate,
+      getRowClass, // Aggiungi la funzione per le classi
     }
   },
 }
@@ -205,7 +288,8 @@ export default {
 }
 
 .date-filter {
-  max-width: 300px;
+  max-width: none; /* Rimuovi la larghezza massima per il calendario */
+  width: 100%; /* Occupa l'intera larghezza disponibile */
 }
 
 .total-people q-card {
@@ -220,5 +304,12 @@ export default {
 
 .q-expansion-item__content {
   background-color: rgba(0, 0, 0, 0.03);
+}
+
+.daily-bookings {
+  /* Aggiunto stile per la tabella */
+  width: 100%;
+  /* max-width: 600px;  Rimuovi la larghezza massima */
+  margin-top: 20px;
 }
 </style>

@@ -128,6 +128,25 @@
             clearable
             @update:model-value="onGameSelected"
           >
+            <template v-slot:option="{ opt }">
+              <q-item class="game-option">
+                <q-item-section avatar>
+                  <q-avatar square>
+                    <q-img :src="opt.copertina" :ratio="1" />
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ opt.label }}</q-item-label>
+                  <q-item-label caption class="game-details">
+                    <q-badge :color="getDifficultyColor(opt.difficulty)" class="q-mr-sm">
+                      {{ opt.difficulty }}
+                    </q-badge>
+                    <q-icon name="people" size="xs" class="q-mr-xs" />
+                    {{ opt.players }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
             <template v-slot:no-option>
               <q-item>
                 <q-item-section class="text-grey"> Nessun gioco disponibile </q-item-section>
@@ -445,11 +464,19 @@ export default defineComponent({
 
     // Computed property per i giochi parzialmente occupati
     const partiallyOccupiedGames = computed(() => {
+      if (!availableSlots.value?.length || !slotsMap.value) return []
+
       return availableSlots.value.filter((game) => {
-        const gameSlots = slotsMap.value[game.id] || {}
-        return Object.values(gameSlots).some(
-          (slot) => slot.postiLiberi > 0 && slot.postiLiberi < game.giocatori_max,
-        )
+        const gameSlots = slotsMap.value[game.id]
+        if (!gameSlots) return false
+
+        // Un gioco è parzialmente occupato se:
+        // 1. Ha almeno uno slot con prenotazioni attive
+        // 2. Ha almeno uno slot con posti liberi
+        const hasActiveSlots = Object.values(gameSlots).some((slot) => slot.hasActiveBooking)
+        const hasAvailableSeats = Object.values(gameSlots).some((slot) => slot.postiLiberi > 0)
+
+        return hasActiveSlots && hasAvailableSeats
       })
     })
 
@@ -523,8 +550,8 @@ export default defineComponent({
       dynamicTimeSlots = [...new Set(dynamicTimeSlots)].sort()
       availableTimeSlots.value = dynamicTimeSlots
 
-      const startOfDay = `${formattedDate}T00:00:00+01:00`
-      const endOfDay = `${formattedDate}T23:59:59+01:00`
+      const startOfDay = `${formattedDate}T00:00:00.000Z` // Modificato per UTC
+      const endOfDay = `${formattedDate}T23:59:59.999Z` // Modificato per UTC
 
       // Esegui in parallelo la query per i giochi e per le prenotazioni della giornata
       const [{ data: giochi, error: giochiError }, { data: bookingsData, error: bookingsError }] =
@@ -534,7 +561,7 @@ export default defineComponent({
             .from('prenotazioni')
             .select('gioco_id, numero_persone, data_inizio, data_fine')
             .gte('data_inizio', startOfDay)
-            .lte('data_inizio', endOfDay),
+            .lt('data_inizio', endOfDay),
         ])
 
       if (giochiError) {
@@ -553,13 +580,31 @@ export default defineComponent({
       // Crea un Set di ID dei giochi con prenotazioni attive
       const activeGameIds = new Set(bookingsData?.map((b) => b.gioco_id) || [])
 
+      // Modifica questa parte nel metodo loadAvailability
       // Prepara le opzioni per il menu a tendina (solo giochi senza prenotazioni attive)
-      availableGamesOptions.value = giochi
-        .filter((game) => !activeGameIds.has(game.id))
-        .map((game) => ({
-          label: `${game.nome} (${game.giocatori_min}-${game.giocatori_max} giocatori)`,
-          value: game.id,
-        }))
+      availableGamesOptions.value = await Promise.all(
+        giochi
+          .filter((game) => !activeGameIds.has(game.id))
+          .map(async (game) => {
+            let imageUrl =
+              'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png'
+
+            if (game.copertina) {
+              const {
+                data: { publicUrl },
+              } = supabase.storage.from('Copertine_giochi').getPublicUrl(game.copertina)
+              imageUrl = publicUrl
+            }
+
+            return {
+              label: game.nome,
+              value: game.id,
+              copertina: imageUrl,
+              difficulty: game.difficolta,
+              players: `${game.giocatori_min}-${game.giocatori_max} giocatori`,
+            }
+          }),
+      )
 
       // Processa i giochi: aggiungi l'URL della copertina e il flag di prenotazioni attive
       const processedGames = await Promise.all(
@@ -588,6 +633,7 @@ export default defineComponent({
       // Costruisci una mappa delle prenotazioni per ID gioco per una ricerca più veloce
       const bookingsByGame = {}
       if (bookingsData) {
+        console.log('Bookings found for date:', bookingsData)
         bookingsData.forEach((booking) => {
           if (!bookingsByGame[booking.gioco_id]) {
             bookingsByGame[booking.gioco_id] = []
@@ -599,41 +645,51 @@ export default defineComponent({
       // Per ogni gioco e per ogni slot, calcola i posti liberi
       for (const game of processedGames) {
         slotsMap.value[game.id] = {}
+        const gameBookings = bookingsByGame[game.id] || []
+        let hasAnyBooking = false
+
         for (const slot of availableTimeSlots.value) {
-          const startIso = `${formattedDate}T${slot}:00+01:00`
-          const slotStart = new Date(startIso)
+          const startIso = `${formattedDate}T${slot}:00Z` // Modificato per UTC
+          const slotStartTime = new Date(startIso).getTime()
           const durata = game.durata_media || 60
-          const slotEnd = new Date(slotStart.getTime() + durata * 60000)
-          const gameBookings = bookingsByGame[game.id] || []
+          const slotEndTime = slotStartTime + durata * 60 * 1000
 
-          // Prenotazioni che iniziano esattamente nello slot
-          const exactBookings = gameBookings.filter((b) => {
-            const bStart = new Date(b.data_inizio)
-            return bStart.toISOString() === slotStart.toISOString()
-          })
-          const seatsBookedExact = exactBookings.reduce((acc, b) => acc + b.numero_persone, 0)
-          let freeSeats = game.giocatori_max - seatsBookedExact
+          // Conta le prenotazioni per questo slot
+          let seatsBooked = 0
+          let hasBookingInSlot = false
 
-          // Verifica se ci sono prenotazioni che si sovrappongono (diverse da quelle esatte)
-          const overlappingBookings = gameBookings.filter((b) => {
-            const bStart = new Date(b.data_inizio)
-            const bEnd = new Date(b.data_fine)
-            return (
-              bStart < slotEnd &&
-              bEnd > slotStart &&
-              bStart.toISOString() !== slotStart.toISOString()
-            )
-          })
-          if (overlappingBookings.length > 0) {
-            freeSeats = 0
+          for (const booking of gameBookings) {
+            const bookingStartTime = new Date(booking.data_inizio).getTime()
+            const bookingEndTime = new Date(booking.data_fine).getTime()
+
+            // Verifica sovrapposizione
+            if (bookingStartTime < slotEndTime && bookingEndTime > slotStartTime) {
+              seatsBooked += booking.numero_persone
+              hasBookingInSlot = true
+              hasAnyBooking = true
+            }
           }
+
+          const freeSeats = Math.max(0, game.giocatori_max - seatsBooked)
 
           slotsMap.value[game.id][slot] = {
             postiLiberi: freeSeats,
-            hasActiveBooking: game.hasActiveBookings,
+            hasActiveBooking: hasBookingInSlot,
           }
         }
+
+        // Aggiorna il flag hasActiveBookings del gioco
+        game.hasActiveBookings = hasAnyBooking
       }
+
+      // Debug logs
+      console.log('Final Slots Map:', slotsMap.value)
+      console.log(
+        'Games with bookings:',
+        processedGames.filter((g) => g.hasActiveBookings),
+      )
+      console.log('Partially occupied games:', partiallyOccupiedGames.value)
+
       loading.value = false
     }
 
@@ -720,6 +776,15 @@ export default defineComponent({
       }
     }
 
+    const getDifficultyColor = (difficulty) => {
+      const colors = {
+        facile: 'positive',
+        medio: 'warning',
+        difficile: 'negative',
+      }
+      return colors[difficulty] || 'grey'
+    }
+
     return {
       quasarLang,
       selectedDate,
@@ -754,6 +819,7 @@ export default defineComponent({
       onGameSelected,
       partiallyOccupiedGames,
       newlySelectedGames,
+      getDifficultyColor,
     }
   },
 })
@@ -839,5 +905,33 @@ export default defineComponent({
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.game-option {
+  padding: 8px;
+}
+
+.game-option .q-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.game-details {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--q-secondary);
+  margin-top: 4px;
+}
+
+.game-details .q-icon {
+  margin-left: 8px;
+}
+
+.game-details .q-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
 }
 </style>
