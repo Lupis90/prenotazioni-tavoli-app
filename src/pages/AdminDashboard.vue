@@ -96,15 +96,13 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
-import { useQuasar } from 'quasar'
 
 export default {
   name: 'AdminDashboard',
   setup() {
-    const $q = useQuasar()
-    const reservations = ref([])
+
     const selectedDate = ref('')
     const menu = ref(false)
     const gamesWithBookings = ref([])
