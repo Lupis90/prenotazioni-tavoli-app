@@ -173,6 +173,12 @@ export default defineComponent({
         to: '/prenota',
       },
       {
+        title: 'Dashboard', // Nuovo link per la dashboard
+        icon: 'dashboard',
+        to: '/dashboard',
+        adminOnly: true,
+      },
+      {
         title: 'Aggiungi Giochi',
         icon: 'add_circle',
         to: '/load-new-games',
@@ -181,6 +187,7 @@ export default defineComponent({
         title: 'Gestione Disponibilità',
         icon: 'event_available',
         to: '/admin-availability',
+        adminOnly: true,
       },
     ]
 
@@ -196,7 +203,10 @@ export default defineComponent({
     })
 
     const filteredNavLinks = computed(() => {
-      return navLinks.filter((link) => link.title !== 'Gestione Disponibilità' || isAdmin.value)
+      return navLinks.filter((link) => {
+        if (link.adminOnly) return isAdmin.value
+        return true
+      })
     })
 
     router.onError((error) => {
