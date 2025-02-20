@@ -128,25 +128,26 @@
             clearable
             @update:model-value="onGameSelected"
           >
-            <template v-slot:option="{ opt }">
-              <q-item class="game-option">
-                <q-item-section avatar>
-                  <q-avatar square>
-                    <q-img :src="opt.copertina" :ratio="1" />
-                  </q-avatar>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ opt.label }}</q-item-label>
-                  <q-item-label caption class="game-details">
-                    <q-badge :color="getDifficultyColor(opt.difficulty)" class="q-mr-sm">
-                      {{ opt.difficulty }}
-                    </q-badge>
-                    <q-icon name="people" size="xs" class="q-mr-xs" />
-                    {{ opt.players }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
+          <template v-slot:option="props">
+  <q-item v-bind="props.itemProps" clickable class="game-option">
+    <q-item-section avatar>
+      <q-avatar square>
+        <q-img :src="props.opt.copertina" :ratio="1" />
+      </q-avatar>
+    </q-item-section>
+    <q-item-section>
+      <q-item-label>{{ props.opt.label }}</q-item-label>
+      <q-item-label caption class="game-details">
+        <q-badge :color="getDifficultyColor(props.opt.difficulty)" class="q-mr-sm">
+          {{ props.opt.difficulty }}
+        </q-badge>
+        <q-icon name="people" size="xs" class="q-mr-xs" />
+        {{ props.opt.players }}
+      </q-item-label>
+    </q-item-section>
+  </q-item>
+</template>
+
             <template v-slot:no-option>
               <q-item>
                 <q-item-section class="text-grey"> Nessun gioco disponibile </q-item-section>
@@ -682,15 +683,7 @@ export default defineComponent({
         game.hasActiveBookings = hasAnyBooking
       }
 
-      // Debug logs
-      console.log('Final Slots Map:', slotsMap.value)
-      console.log(
-        'Games with bookings:',
-        processedGames.filter((g) => g.hasActiveBookings),
-      )
-      console.log('Partially occupied games:', partiallyOccupiedGames.value)
-
-      loading.value = false
+            loading.value = false
     }
 
     function getSlotInfo(game, slot) {
