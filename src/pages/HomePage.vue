@@ -49,20 +49,17 @@
               arrows
               navigation
               infinite
+              autoplay
+              :autoplay-timeout="4000"
               height="300px"
               class="rounded-borders"
             >
-                <q-carousel-slide name="1" img-src="/public/images/foto1.jpg" />
-                <q-carousel-slide name="2" img-src="/public/images/foto2.jpg" />
-                <q-carousel-slide name="3" img-src="/public/images/foto3.jpg" />
-                <q-carousel-slide name="4" img-src="/public/images/foto4.jpg" />
-                <q-carousel-slide name="5" img-src="/public/images/foto5.jpg" />
-                <q-carousel-slide name="6" img-src="/public/images/foto6.jpg" />
-                <q-carousel-slide name="7" img-src="/public/images/foto7.jpg" />
-                <q-carousel-slide name="8" img-src="/public/images/foto8.jpg" />
-                <q-carousel-slide name="9" img-src="/public/images/foto9.jpg" />
-                <q-carousel-slide name="10" img-src="/public/images/foto10.jpg" />
-                <q-carousel-slide name="11" img-src="/public/images/foto11.jpg" />
+              <q-carousel-slide
+                v-for="index in 11"
+                :key="index"
+                :name="String(index)"
+                :img-src="getCarouselImageUrl(`foto${index}.jpg`)"
+              />
             </q-carousel>
           </div>
         </div>
@@ -202,6 +199,10 @@ export default defineComponent({
       window.open('https://www.instagram.com/log_life_of_gamers/', '_blank')
     }
 
+    const getCarouselImageUrl = (fileName) => {
+      return supabase.storage.from('Copertine_giochi').getPublicUrl(`foto/${fileName}`).data.publicUrl
+    }
+
     onMounted(async () => {
       try {
         // Carica i giochi dalla tabella 'giochi'
@@ -240,7 +241,8 @@ export default defineComponent({
     return {
       featuredGames,
       openInstagram,
-      slide
+      slide,
+      getCarouselImageUrl
     }
   }
 })
