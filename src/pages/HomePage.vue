@@ -4,7 +4,7 @@
     <div class="hero-section text-center q-pa-xl" data-aos="fade-down">
       <div class="hero-header" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-          <img src="src/assets/logo.png" alt="Life of Gamers Logo" style="max-width: 100px;" />
+          <img src="images/logo.png" alt="Life of Gamers Logo" style="max-width: 100px;" />
           <h1 class="text-h2 text-weight-bold text-primary">Life of Gamers</h1>
         </div>
         <p class="text-h5 text-grey-8">Il tuo posto ideale per giocare in compagnia</p>
