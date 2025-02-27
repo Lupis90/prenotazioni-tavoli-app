@@ -312,7 +312,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted } from 'vue'
+import { defineComponent, ref, computed, onMounted} from 'vue'
 import { supabase } from 'src/supabase'
 import { useQuasar } from 'quasar'
 import quasarLang from 'quasar/lang/it'
@@ -460,7 +460,7 @@ export default defineComponent({
     // Nuove variabili per la selezione dei giochi
     const selectedGameToAdd = ref(null)
     const availableGamesOptions = ref([])
-    const selectedGames = ref(new Set())
+    const selectedGames = ref([])
 
     // Computed property per i giochi parzialmente occupati
     const partiallyOccupiedGames = computed(() => {
@@ -484,7 +484,7 @@ export default defineComponent({
     const newlySelectedGames = computed(() => {
       return availableSlots.value.filter(
         (game) =>
-          selectedGames.value.has(game.id) &&
+          selectedGames.value.includes(game.id) &&
           !partiallyOccupiedGames.value.some((g) => g.id === game.id),
       )
     })
@@ -494,11 +494,23 @@ export default defineComponent({
       return [...partiallyOccupiedGames.value, ...newlySelectedGames.value]
     })
 
+    // Funzione helper per trovare un gioco dal suo ID
+    const findGameById = (gameId) => {
+      return availableSlots.value.find((game) => game.id === gameId)
+    }
+
     // Funzione per gestire la selezione di un nuovo gioco
     const onGameSelected = (gameId) => {
+      console.log('Game selected:', gameId)
       if (gameId) {
-        selectedGames.value.add(gameId)
-        selectedGameToAdd.value = null
+        const game = findGameById(gameId)
+        if (game) {
+          console.log('Found game:', game)
+          if (!selectedGames.value.includes(gameId)) {
+            selectedGames.value.push(gameId)
+          }
+          selectedGameToAdd.value = null
+        }
       }
     }
 
@@ -681,14 +693,6 @@ export default defineComponent({
         // Aggiorna il flag hasActiveBookings del gioco
         game.hasActiveBookings = hasAnyBooking
       }
-
-      // Debug logs
-      console.log('Final Slots Map:', slotsMap.value)
-      console.log(
-        'Games with bookings:',
-        processedGames.filter((g) => g.hasActiveBookings),
-      )
-      console.log('Partially occupied games:', partiallyOccupiedGames.value)
 
       loading.value = false
     }
