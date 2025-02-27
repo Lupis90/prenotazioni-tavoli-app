@@ -40,6 +40,28 @@ body {
   }
 }
 
+// General button styling
+.q-btn {
+  transition: all 0.3s ease;
+  border-radius: 8px; // Slightly rounded corners
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // Subtle shadow
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Instagram button specific styling
+.instagram-btn {
+    background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+    color: white;
+
+    &:hover {
+        filter: brightness(1.1); // Slightly brighter on hover
+    }
+}
+
 .bg-dark {
   background: #121212;
 }

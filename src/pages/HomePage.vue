@@ -2,8 +2,13 @@
   <q-page :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
     <!-- Hero Section -->
     <div class="hero-section text-center q-pa-xl" data-aos="fade-down">
-      <h1 class="text-h2 text-weight-bold text-primary q-mb-md">Life of Gamers</h1>
-      <p class="text-h5 text-grey-8 q-mb-xl">Il tuo posto ideale per giocare in compagnia</p>
+      <div class="hero-header" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+          <img src="src/assets/logo.png" alt="Life of Gamers Logo" style="max-width: 100px;" />
+          <h1 class="text-h2 text-weight-bold text-primary">Life of Gamers</h1>
+        </div>
+        <p class="text-h5 text-grey-8">Il tuo posto ideale per giocare in compagnia</p>
+      </div>
 
       <div class="row justify-center q-gutter-md">
         <q-btn
@@ -36,6 +41,31 @@
   <!-- Welcome Section -->
     <div class="welcome-section q-mt-xl q-pa-lg" data-aos="fade-up">
       <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="q-pa-xl">
+        <div class="text-center q-mt-lg">
+          <div class="photo-carousel q-mb-lg">
+            <q-carousel
+              v-model="slide"
+              animated
+              arrows
+              navigation
+              infinite
+              height="300px"
+              class="rounded-borders"
+            >
+                <q-carousel-slide name="1" img-src="/public/images/foto1.jpg" />
+                <q-carousel-slide name="2" img-src="/public/images/foto2.jpg" />
+                <q-carousel-slide name="3" img-src="/public/images/foto3.jpg" />
+                <q-carousel-slide name="4" img-src="/public/images/foto4.jpg" />
+                <q-carousel-slide name="5" img-src="/public/images/foto5.jpg" />
+                <q-carousel-slide name="6" img-src="/public/images/foto6.jpg" />
+                <q-carousel-slide name="7" img-src="/public/images/foto7.jpg" />
+                <q-carousel-slide name="8" img-src="/public/images/foto8.jpg" />
+                <q-carousel-slide name="9" img-src="/public/images/foto9.jpg" />
+                <q-carousel-slide name="10" img-src="/public/images/foto10.jpg" />
+                <q-carousel-slide name="11" img-src="/public/images/foto11.jpg" />
+            </q-carousel>
+          </div>
+        </div>
         <div class="text-h4 text-primary text-center q-mb-lg">
           Benvenuto in LOG - Life Of Gamers! 🎲✨
         </div>
@@ -59,6 +89,7 @@
         <div class="text-body1 q-mb-md">
           Vieni a trovarci, prendi una sedia e unisciti alla partita! Non serve esperienza, non serve strategia… serve solo voglia di giocare!
         </div>
+
         <div class="text-h5 text-primary text-center q-mt-lg">🚀 Sei pronto? Noi sì!</div>
       </q-card>
     </div>
@@ -165,6 +196,7 @@ export default defineComponent({
   name: 'HomePage',
   setup() {
     const featuredGames = ref([])
+    const slide = ref('1')
 
     const openInstagram = () => {
       window.open('https://www.instagram.com/log_life_of_gamers/', '_blank')
@@ -207,7 +239,8 @@ export default defineComponent({
 
     return {
       featuredGames,
-      openInstagram
+      openInstagram,
+      slide
     }
   }
 })
@@ -262,4 +295,21 @@ export default defineComponent({
 .instagram-media {
   margin: 0 auto;
 }
+  .hero-section img {
+    animation: fadeIn 1.2s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .hero-section {
+    background: linear-gradient(135deg, #fff, #f7f7f7);
+  }
 </style>
