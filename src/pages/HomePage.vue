@@ -81,7 +81,6 @@
           <li>✅ Serate piene di sfide epiche, risate e improbabili alleanze.</li>
           <li>✅ Tornei per chi vuole mettersi alla prova e partite rilassate per chi vuole solo divertirsi.</li>
           <li>✅ La certezza di non dover mai più dire "Non so cosa fare stasera" 😎</li>
-          <li>✅ Avventure su Instagram per restare sempre aggiornato sugli eventi!</li>
         </ul>
         <div class="text-body1 q-mb-md">
           Vieni a trovarci, prendi una sedia e unisciti alla partita! Non serve esperienza, non serve strategia… serve solo voglia di giocare!
