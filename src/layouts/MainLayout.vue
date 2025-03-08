@@ -91,29 +91,28 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
-import { supabase } from '../supabase'
+import { defineComponent, ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { supabase } from '../supabase';
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup() {
-    const $q = useQuasar()
-    const route = useRoute()
-    const router = useRouter()
-    const leftDrawerOpen = ref(false)
-    const isLoggedIn = ref(false)
-    const userProfile = ref(null)
-    const isAdmin = ref(false)
+    const $q = useQuasar();
+    const route = useRoute();
+    const router = useRouter();
+    const leftDrawerOpen = ref(false);
+    const isLoggedIn = ref(false);
+    const userProfile = ref(null);
+    const isAdmin = ref(false);
 
-    // Funzione dedicata per caricare il profilo utente
     const loadUserProfile = async (userId) => {
       if (!userId) {
-        userProfile.value = null
-        isAdmin.value = false
-        return
+        userProfile.value = null;
+        isAdmin.value = false;
+        return;
       }
 
       try {
@@ -121,40 +120,46 @@ export default defineComponent({
           .from('profiles')
           .select('user_name, is_admin')
           .eq('id', userId)
-          .single()
+          .single();
 
-        if (error) throw error
+        if (error) throw error;
 
-        userProfile.value = data
-        isAdmin.value = data?.is_admin || false
+        userProfile.value = data;
+        isAdmin.value = data?.is_admin || false;
       } catch (err) {
-        console.error('Error loading user profile:', err)
-        userProfile.value = null
-        isAdmin.value = false
+        console.error('Error loading user profile:', err);
+        userProfile.value = null;
+        isAdmin.value = false;
       }
-    }
+    };
 
-    // Watch per i cambiamenti nella sessione
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      isLoggedIn.value = !!session
-      if (session?.user) {
-        await loadUserProfile(session.user.id)
-      } else {
-        userProfile.value = null
-        isAdmin.value = false
-      }
-    })
-
-    // Carica il profilo al mount
-    onMounted(async () => {
+    const checkUserSession = async () => {
       const {
         data: { session },
-      } = await supabase.auth.getSession()
-      isLoggedIn.value = !!session
+      } = await supabase.auth.getSession();
+      isLoggedIn.value = !!session;
       if (session?.user) {
-        await loadUserProfile(session.user.id)
+        await loadUserProfile(session.user.id);
+      } else {
+        userProfile.value = null;
+        isAdmin.value = false;
       }
-    })
+    };
+
+    onMounted(async () => {
+      await checkUserSession();
+    });
+
+    // Fondamentale: Reagisci ai cambi di rotta e controlla la sessione.
+    watch(
+      () => route.path, // Osserva i cambiamenti nel percorso
+      async () => {
+        await checkUserSession(); // Controlla la sessione ad ogni cambio di rotta
+      },
+{ immediate: false }
+
+    );
+
 
     const navLinks = [
       {
@@ -173,7 +178,7 @@ export default defineComponent({
         to: '/prenota',
       },
       {
-        title: 'Dashboard', // Nuovo link per la dashboard
+        title: 'Dashboard',
         icon: 'dashboard',
         to: '/dashboard',
         adminOnly: true,
@@ -190,64 +195,60 @@ export default defineComponent({
         to: '/admin-availability',
         adminOnly: true,
       },
-    ]
+    ];
 
     const handleLogout = async () => {
-      await supabase.auth.signOut()
-      userProfile.value = null
-      router.push('/login')
-    }
+      await checkUserSession(); // Aggiorna lo stato PRIMA del logout
+      await supabase.auth.signOut();
+      router.push('/login');
+    };
 
     const currentRouteName = computed(() => {
-      const name = route.name?.toString() || ''
-      return name.charAt(0).toUpperCase() + name.slice(1)
-    })
+      const name = route.name?.toString() || '';
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    });
 
     const filteredNavLinks = computed(() => {
       return navLinks.filter((link) => {
-        if (link.adminOnly) return isAdmin.value
-        return true
-      })
-    })
+        if (link.adminOnly) return isAdmin.value;
+        return true;
+      });
+    });
 
     router.onError((error) => {
-      console.error('Navigation error:', error)
+      console.error('Navigation error:', error);
       $q.notify({
         type: 'warning',
         message: 'Errore di navigazione, riprova',
-      })
-    })
+      });
+    });
 
     return {
       leftDrawerOpen,
       navLinks,
       toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-        // Se il drawer è stato appena aperto e siamo su mobile
+        leftDrawerOpen.value = !leftDrawerOpen.value;
         if (leftDrawerOpen.value && window.innerWidth < 1024) {
-          // Aggiungiamo un event listener per chiudere il drawer al click fuori
           const closeDrawer = (e) => {
-            // Chiudi il drawer solo se il click è fuori dal drawer
             if (!e.target.closest('.q-drawer')) {
-              leftDrawerOpen.value = false
-              document.removeEventListener('click', closeDrawer)
+              leftDrawerOpen.value = false;
+              document.removeEventListener('click', closeDrawer);
             }
-          }
-          // Aggiungiamo il listener con un piccolo delay per evitare che si chiuda immediatamente
+          };
           setTimeout(() => {
-            document.addEventListener('click', closeDrawer)
-          }, 300)
+            document.addEventListener('click', closeDrawer);
+          }, 300);
         }
       },
       currentRouteName,
       isLoggedIn,
-      userProfile, // esporta userProfile invece di userEmail
+      userProfile,
       handleLogout,
       isAdmin,
       filteredNavLinks,
-    }
+    };
   },
-})
+});
 </script>
 
 <style lang="scss">
