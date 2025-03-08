@@ -182,6 +182,7 @@ export default defineComponent({
         title: 'Aggiungi Giochi',
         icon: 'add_circle',
         to: '/load-new-games',
+        adminOnly: true,
       },
       {
         title: 'Gestione Disponibilità',
