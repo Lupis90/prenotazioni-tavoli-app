@@ -7,7 +7,7 @@
           <img src="images/logo.png" alt="Life of Gamers Logo" style="max-width: 100px;" />
           <h1 class="text-h2 text-weight-bold text-primary">Life of Gamers</h1>
         </div>
-        <p class="text-h5 text-grey-8">Il tuo posto ideale per giocare in compagnia</p>
+        <p class="text-h5 text-grey-8">Il posto ideale per giocare in compagnia</p>
       </div>
 
       <div class="row justify-center q-gutter-md">
@@ -67,7 +67,7 @@
           Benvenuto in LOG - Life Of Gamers! 🎲✨
         </div>
         <div class="text-body1 q-mb-md">
-          Sei mai stato bloccato in una serata noiosa senza sapere cosa fare? O magari pensi che i giochi da tavolo siano solo Monopoli e Risiko? Beh, preparati a ricrederti! Serate piene di sfide epiche, risate e improbabili alleanze.
+          Sei mai stato bloccato in una serata di doom scrolling su vari social, netflix e youtube? Beh ecco, noi siamo l'alternativa che cercavi! Serate piene di sfide epiche, risate e improbabili alleanze.
         </div>
         <div class="text-body1 q-mb-md">
           Qui non servono manuali di mille pagine o strategie da gran maestro: basta la voglia di divertirsi e di passare una serata diversa dal solito. Che tu sia un esperto di deck-building, un amante del lancio di dadi o un totale principiante, sei nel posto giusto!
@@ -78,12 +78,12 @@
         <div class="text-h5 text-primary q-my-md">🔥 Cosa troverai da noi?</div>
         <ul class="features-list q-mb-lg">
           <li>✅ Un gruppo di persone accoglienti e pronte a farti scoprire giochi nuovi.</li>
-          <li>✅ Serate piene di sfide epiche, risate e improbabili alleanze.</li>
+          <li>✅ Serate piene di divertimento e nuovi amici.</li>
           <li>✅ Tornei per chi vuole mettersi alla prova e partite rilassate per chi vuole solo divertirsi.</li>
           <li>✅ La certezza di non dover mai più dire "Non so cosa fare stasera" 😎</li>
         </ul>
         <div class="text-body1 q-mb-md">
-          Vieni a trovarci, prendi una sedia e unisciti alla partita! Non serve esperienza, non serve strategia… serve solo voglia di giocare!
+          Vieni a trovarci, prendi una sedia e unisciti alla partita! Non serve esperienza, non serve strategia… serve solo la voglia di giocare!
         </div>
 
         <div class="text-h5 text-primary text-center q-mt-lg">🚀 Sei pronto? Noi sì!</div>
@@ -103,7 +103,7 @@
             target="_blank"
             class="text-primary"
           >@log_life_of_gamers</a>
-          per contenuti esclusivi, aggiornamenti in tempo reale e per farti ispirare dalla nostra community!
+          per contenuti esclusivi, aggiornamenti sugli eventi in programma o semplicemente per farti ispirare dalla nostra community!
         </p>
         <!-- Sezione Embed di Instagram -->
         <div class="instagram-carousel row justify-center q-mb-lg">
