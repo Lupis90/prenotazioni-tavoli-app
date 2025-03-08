@@ -71,11 +71,7 @@
             style="width: 350px"
           >
             <q-card
-              :class="[
-                'game-card shadow-6',
-                'has-bookings',
-                $q.dark.isActive ? 'bg-dark' : 'bg-white',
-              ]"
+              :class="[ 'game-card shadow-6', 'has-bookings', $q.dark.isActive ? 'bg-dark' : 'bg-white' ]"
             >
               <q-img :src="game.copertina" :ratio="16 / 9" class="game-image">
                 <div class="absolute-bottom image-overlay">
@@ -128,26 +124,25 @@
             clearable
             @update:model-value="onGameSelected"
           >
-          <template v-slot:option="props">
-  <q-item v-bind="props.itemProps" clickable class="game-option">
-    <q-item-section avatar>
-      <q-avatar square>
-        <q-img :src="props.opt.copertina" :ratio="1" />
-      </q-avatar>
-    </q-item-section>
-    <q-item-section>
-      <q-item-label>{{ props.opt.label }}</q-item-label>
-      <q-item-label caption class="game-details">
-        <q-badge :color="getDifficultyColor(props.opt.difficulty)" class="q-mr-sm">
-          {{ props.opt.difficulty }}
-        </q-badge>
-        <q-icon name="people" size="xs" class="q-mr-xs" />
-        {{ props.opt.players }}
-      </q-item-label>
-    </q-item-section>
-  </q-item>
-</template>
-
+            <template v-slot:option="props">
+              <q-item v-bind="props.itemProps" clickable class="game-option">
+                <q-item-section avatar>
+                  <q-avatar square>
+                    <q-img :src="props.opt.copertina" :ratio="1" />
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ props.opt.label }}</q-item-label>
+                  <q-item-label caption class="game-details">
+                    <q-badge :color="getDifficultyColor(props.opt.difficulty)" class="q-mr-sm">
+                      {{ props.opt.difficulty }}
+                    </q-badge>
+                    <q-icon name="people" size="xs" class="q-mr-xs" />
+                    {{ props.opt.players }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
             <template v-slot:no-option>
               <q-item>
                 <q-item-section class="text-grey"> Nessun gioco disponibile </q-item-section>
@@ -189,11 +184,7 @@
                   <div class="text-subtitle2 q-mb-sm">Difficoltà</div>
                   <q-option-group
                     v-model="filters.difficulty"
-                    :options="[
-                      { label: 'Facile', value: 'facile' },
-                      { label: 'Medio', value: 'medio' },
-                      { label: 'Difficile', value: 'difficile' },
-                    ]"
+                    :options="[ { label: 'Facile', value: 'facile' }, { label: 'Medio', value: 'medio' }, { label: 'Difficile', value: 'difficile' } ]"
                     type="checkbox"
                     dense
                   />
@@ -213,11 +204,7 @@
     <div v-if="newlySelectedGames.length" class="row q-col-gutter-xl q-mt-lg">
       <div v-for="game in newlySelectedGames" :key="game.id" class="col-12 col-sm-6 col-md-4">
         <q-card
-          :class="[
-            'game-card shadow-6',
-            game.hasActiveBookings ? 'has-bookings' : '',
-            $q.dark.isActive ? 'bg-dark' : 'bg-white',
-          ]"
+          :class="[ 'game-card shadow-6', game.hasActiveBookings ? 'has-bookings' : '', $q.dark.isActive ? 'bg-dark' : 'bg-white' ]"
         >
           <q-img :src="game.copertina" :ratio="16 / 9" class="game-image">
             <div class="absolute-bottom image-overlay">
@@ -313,7 +300,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted} from 'vue'
+import { defineComponent, ref, computed, onMounted } from 'vue'
 import { supabase } from 'src/supabase'
 import { useQuasar } from 'quasar'
 import quasarLang from 'quasar/lang/it'
@@ -593,7 +580,6 @@ export default defineComponent({
       // Crea un Set di ID dei giochi con prenotazioni attive
       const activeGameIds = new Set(bookingsData?.map((b) => b.gioco_id) || [])
 
-      // Modifica questa parte nel metodo loadAvailability
       // Prepara le opzioni per il menu a tendina (solo giochi senza prenotazioni attive)
       availableGamesOptions.value = await Promise.all(
         giochi
@@ -667,27 +653,27 @@ export default defineComponent({
           const durata = game.durata_media || 60
           const slotEndTime = slotStartTime + durata * 60 * 1000
 
-          // Conta le prenotazioni per questo slot
-          let seatsBooked = 0
-          let hasBookingInSlot = false
+          let seatsBookedExact = 0
+          let disableSlot = false
 
           for (const booking of gameBookings) {
             const bookingStartTime = new Date(booking.data_inizio).getTime()
             const bookingEndTime = new Date(booking.data_fine).getTime()
-
-            // Verifica sovrapposizione
-            if (bookingStartTime < slotEndTime && bookingEndTime > slotStartTime) {
-              seatsBooked += booking.numero_persone
-              hasBookingInSlot = true
+            if (bookingStartTime === slotStartTime) {
+              seatsBookedExact += booking.numero_persone
               hasAnyBooking = true
+            } else if (bookingStartTime < slotEndTime && bookingEndTime > slotStartTime) {
+              disableSlot = true
+              hasAnyBooking = true
+              break
             }
           }
 
-          const freeSeats = Math.max(0, game.giocatori_max - seatsBooked)
+          const freeSeats = disableSlot ? 0 : Math.max(0, game.giocatori_max - seatsBookedExact)
 
           slotsMap.value[game.id][slot] = {
             postiLiberi: freeSeats,
-            hasActiveBooking: hasBookingInSlot,
+            hasActiveBooking: seatsBookedExact > 0,
           }
         }
 
@@ -695,7 +681,7 @@ export default defineComponent({
         game.hasActiveBookings = hasAnyBooking
       }
 
-            loading.value = false
+      loading.value = false
     }
 
     function getSlotInfo(game, slot) {
@@ -753,11 +739,16 @@ export default defineComponent({
         return
       }
 
-      const startIso = `${formattedDate}T${selectedSlot.value}:00+01:00`
+      const startIso = `${formattedDate}T${selectedSlot.value}:00`
       const startDateObj = new Date(startIso)
       const durata = selectedGame.value.durata_media || 60
       const endDateObj = new Date(startDateObj.getTime() + durata * 60000)
-      const endIso = endDateObj.toISOString()
+      const endIso = endDateObj.getFullYear() + '-' +
+        String(endDateObj.getMonth() + 1).padStart(2, '0') + '-' +
+        String(endDateObj.getDate()).padStart(2, '0') + 'T' +
+        String(endDateObj.getHours()).padStart(2, '0') + ':' +
+        String(endDateObj.getMinutes()).padStart(2, '0') + ':' +
+        String(endDateObj.getSeconds()).padStart(2, '0')
 
       try {
         const { error } = await supabase.from('prenotazioni').insert([
