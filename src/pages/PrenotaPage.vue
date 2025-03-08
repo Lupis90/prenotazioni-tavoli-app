@@ -14,7 +14,6 @@
     <!-- Date Selection Card -->
     <div class="date-selector q-pa-md q-mb-lg shadow-3">
       <div class="row items-center q-gutter-md">
-        <!-- Utilizziamo un QInput con QDate in QMenu -->
         <q-input
           v-model="selectedDate"
           label="Seleziona data"
@@ -35,7 +34,6 @@
             @update:model-value="onDateSelected"
           />
         </q-menu>
-
         <q-btn
           color="primary"
           label="Mostra disponibilità"
@@ -61,7 +59,7 @@
 
     <!-- Sezione giochi con prenotazioni parziali -->
     <div v-if="!loading && partiallyOccupiedGames.length" class="q-mt-xl">
-      <h4 class="text-h5 text-primary q-mb-md">Aggiungiti ad un tavolo già organizzato</h4>
+      <h4 class="text-h5 text-primary q-mb-md">Unisciti ad un tavolo già organizzato</h4>
       <div class="scroll-container q-px-md">
         <div class="row no-wrap scroll-area">
           <div
@@ -109,13 +107,13 @@
 
     <!-- Sezione per aggiungere nuovi giochi -->
     <div v-if="!loading && availableGamesOptions.length" class="q-mt-xl">
-      <h4 class="text-h5 q-mb-md">Organizza un nuovo tavolo</h4>
+      <h4 class="text-h5 q-mb-md">O crea un nuovo tavolo</h4>
       <div class="row q-col-gutter-md items-center">
         <!-- Game Selector Dropdown -->
         <div class="col-grow">
           <q-select
             v-model="selectedGameToAdd"
-            :options="availableGamesOptions"
+            :options="filteredGameOptions"
             label="Aggiungi un gioco da prenotare"
             outlined
             dense
@@ -159,26 +157,15 @@
                 <!-- Filtro per numero giocatori -->
                 <div class="q-mb-md">
                   <div class="text-subtitle2 q-mb-sm">Numero giocatori</div>
-                  <div class="row q-gutter-sm">
-                    <q-input
-                      v-model.number="filters.minPlayers"
-                      type="number"
-                      label="Min"
-                      dense
-                      outlined
-                      style="width: 100px"
-                    />
-                    <q-input
-                      v-model.number="filters.maxPlayers"
-                      type="number"
-                      label="Max"
-                      dense
-                      outlined
-                      style="width: 100px"
-                    />
-                  </div>
+                  <q-input
+                    v-model.number="filters.groupPlayers"
+                    type="number"
+                    label="Numero giocatori"
+                    dense
+                    outlined
+                    style="width: 100px"
+                  />
                 </div>
-
                 <!-- Filtro per difficoltà -->
                 <div>
                   <div class="text-subtitle2 q-mb-sm">Difficoltà</div>
@@ -201,40 +188,41 @@
     </div>
 
     <!-- Game Grid (for newly selected games) -->
-    <div v-if="newlySelectedGames.length" class="row q-col-gutter-xl q-mt-lg">
-      <div v-for="game in newlySelectedGames" :key="game.id" class="col-12 col-sm-6 col-md-4">
-        <q-card
-          :class="[ 'game-card shadow-6', game.hasActiveBookings ? 'has-bookings' : '', $q.dark.isActive ? 'bg-dark' : 'bg-white' ]"
-        >
-          <q-img :src="game.copertina" :ratio="16 / 9" class="game-image">
-            <div class="absolute-bottom image-overlay">
-              <div class="text-h5 text-white">{{ game.nome }}</div>
-              <div class="text-caption text-grey-3">
-                {{ game.giocatori_min }}-{{ game.giocatori_max }} giocatori
+    <div v-if="newlySelectedGames.length" class="scroll-container q-px-md q-mt-lg">
+      <div class="row no-wrap scroll-area">
+        <div v-for="game in newlySelectedGames" :key="game.id" class="col-auto q-pr-md" style="width: 350px">
+          <q-card
+            :class="[ 'game-card shadow-6', game.hasActiveBookings ? 'has-bookings' : '', $q.dark.isActive ? 'bg-dark' : 'bg-white' ]"
+          >
+            <q-img :src="game.copertina" :ratio="16 / 9" class="game-image">
+              <div class="absolute-bottom image-overlay">
+                <div class="text-h5 text-white">{{ game.nome }}</div>
+                <div class="text-caption text-grey-3">
+                  {{ game.giocatori_min }}-{{ game.giocatori_max }} giocatori
+                </div>
+                <q-badge v-if="game.hasActiveBookings" color="primary" class="q-mt-xs">
+                  Prenotazioni attive
+                </q-badge>
               </div>
-              <q-badge v-if="game.hasActiveBookings" color="primary" class="q-mt-xs">
-                Prenotazioni attive
-              </q-badge>
-            </div>
-          </q-img>
-
-          <q-card-section class="time-slots-section">
-            <div class="row q-gutter-sm justify-center">
-              <q-btn
-                v-for="slot in availableTimeSlots"
-                :key="slot"
-                :label="getSlotLabel(game, slot)"
-                :color="getSlotColor(game, slot)"
-                :disable="getSlotInfo(game, slot).postiLiberi <= 0"
-                @click="openBookingDialog(game, slot)"
-                rounded
-                outline
-                class="slot-button"
-                size="sm"
-              />
-            </div>
-          </q-card-section>
-        </q-card>
+            </q-img>
+            <q-card-section class="time-slots-section">
+              <div class="row q-gutter-sm justify-center">
+                <q-btn
+                  v-for="slot in availableTimeSlots"
+                  :key="slot"
+                  :label="getSlotLabel(game, slot)"
+                  :color="getSlotColor(game, slot)"
+                  :disable="getSlotInfo(game, slot).postiLiberi <= 0"
+                  @click="openBookingDialog(game, slot)"
+                  rounded
+                  outline
+                  class="slot-button"
+                  size="sm"
+                />
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
 
@@ -316,10 +304,10 @@ export default defineComponent({
     const availableDates = ref([])
     const availableTimeRanges = ref([])
 
-    // Gli slot orari disponibili (dinamici, calcolati dalla disponibilità nel DB)
+    // Gli slot orari disponibili
     const availableTimeSlots = ref([])
 
-    // Carica dal DB le disponibilità (booking_availability)
+    // Carica dal DB le disponibilità
     const loadAvailableDatesAndTimes = async () => {
       const { data, error } = await supabase.from('booking_availability').select('*')
       if (error) {
@@ -334,31 +322,31 @@ export default defineComponent({
       availableDates.value = data || []
     }
 
-    // Verifica se una data è disponibile (usata dal QDate)
+    // Verifica se una data è disponibile (per il QDate)
     const isDateAvailable = (dateStr) => {
       if (!dateStr || !availableDates.value.length) return false
       const normalizedDate = dateStr.replace(/\//g, '-')
       console.log(
         `Checking date ${normalizedDate}, database dates:`,
-        availableDates.value.map((d) => d.data),
+        availableDates.value.map((d) => d.data)
       )
       const found = availableDates.value.some((d) => d.data === normalizedDate)
       console.log(`Date ${normalizedDate} available: ${found}`)
       return found
     }
 
-    // Quando una data viene selezionata, aggiorna gli slot in base ai blocchi orari disponibili
+    // Quando una data viene selezionata, aggiorna gli slot
     const onDateSelected = (date) => {
       console.log('Date selected:', date)
       selectedDate.value = date
-      menu.value = false // Chiude esplicitamente il menu
+      menu.value = false
 
       // Filtro dei blocchi per la data selezionata
       const timeRanges = availableDates.value.filter((d) => d.data === date)
       console.log('Time ranges found:', timeRanges)
       availableTimeRanges.value = timeRanges
 
-      // Genera gli slot orari dai blocchi e li accumula
+      // Genera gli slot orari dai blocchi
       const allSlots = []
       timeRanges.forEach((range) => {
         const slots = generateSlots(range.orario_inizio, range.orario_fine)
@@ -369,7 +357,7 @@ export default defineComponent({
       // Carica la disponibilità per la data selezionata
       setTimeout(() => {
         loadAvailability()
-      }, 100) // Piccolo delay per assicurarsi che il menu sia chiuso
+      }, 100)
     }
 
     onMounted(() => {
@@ -392,38 +380,34 @@ export default defineComponent({
 
     // Filtri e ricerca
     const searchQuery = ref('')
+    // Modifichiamo i filtri: un campo per il numero di giocatori (groupPlayers) e uno per la difficoltà
     const filters = ref({
-      minPlayers: null,
-      maxPlayers: null,
+      groupPlayers: null,
       difficulty: [],
     })
 
-    const filteredGames = computed(() => {
-      let result = availableSlots.value
-      if (searchQuery.value) {
-        const search = searchQuery.value.toLowerCase()
-        result = result.filter((game) => game.nome.toLowerCase().includes(search))
-      }
-      if (filters.value.minPlayers && filters.value.minPlayers > 0) {
-        result = result.filter(
-          (game) => parseInt(game.giocatori_min) <= parseInt(filters.value.minPlayers),
+    // Computed property per filtrare le opzioni dei giochi nel dropdown
+    const filteredGameOptions = computed(() => {
+      let options = availableGamesOptions.value
+      // Se è impostato il numero di giocatori, il gioco deve supportare quel numero
+      if (filters.value.groupPlayers) {
+        options = options.filter(
+          opt =>
+            parseInt(opt.minPlayers) <= parseInt(filters.value.groupPlayers) &&
+            parseInt(opt.maxPlayers) >= parseInt(filters.value.groupPlayers)
         )
       }
-      if (filters.value.maxPlayers && filters.value.maxPlayers > 0) {
-        result = result.filter(
-          (game) => parseInt(game.giocatori_max) >= parseInt(filters.value.maxPlayers),
+      if (filters.value.difficulty && filters.value.difficulty.length > 0) {
+        options = options.filter(
+          opt => filters.value.difficulty.includes(opt.difficulty)
         )
       }
-      if (filters.value.difficulty.length > 0) {
-        result = result.filter((game) => filters.value.difficulty.includes(game.difficolta))
-      }
-      return result
+      return options
     })
 
     const resetFilters = () => {
       filters.value = {
-        minPlayers: null,
-        maxPlayers: null,
+        groupPlayers: null,
         difficulty: [],
       }
     }
@@ -453,17 +437,11 @@ export default defineComponent({
     // Computed property per i giochi parzialmente occupati
     const partiallyOccupiedGames = computed(() => {
       if (!availableSlots.value?.length || !slotsMap.value) return []
-
       return availableSlots.value.filter((game) => {
         const gameSlots = slotsMap.value[game.id]
         if (!gameSlots) return false
-
-        // Un gioco è parzialmente occupato se:
-        // 1. Ha almeno uno slot con prenotazioni attive
-        // 2. Ha almeno uno slot con posti liberi
         const hasActiveSlots = Object.values(gameSlots).some((slot) => slot.hasActiveBooking)
         const hasAvailableSeats = Object.values(gameSlots).some((slot) => slot.postiLiberi > 0)
-
         return hasActiveSlots && hasAvailableSeats
       })
     })
@@ -473,11 +451,11 @@ export default defineComponent({
       return availableSlots.value.filter(
         (game) =>
           selectedGames.value.includes(game.id) &&
-          !partiallyOccupiedGames.value.some((g) => g.id === game.id),
+          !partiallyOccupiedGames.value.some((g) => g.id === game.id)
       )
     })
 
-    // Modifica displayedGames per escludere i giochi mostrati in altre sezioni
+    // Computed property per i giochi visualizzati
     const displayedGames = computed(() => {
       return [...partiallyOccupiedGames.value, ...newlySelectedGames.value]
     })
@@ -496,14 +474,10 @@ export default defineComponent({
           console.log('Found game:', game)
           if (!selectedGames.value.includes(gameId)) {
             selectedGames.value.push(gameId)
-            // Usa nextTick per assicurarsi che il DOM sia stato aggiornato
             nextTick(() => {
-              // Attendi un momento per assicurarsi che la card sia renderizzata
               setTimeout(() => {
-                // Trova la card nel container dei giochi appena selezionati
                 const newCard = document.querySelector('.q-mt-lg .game-card:last-child')
                 if (newCard) {
-                  // Scrolla alla card con una transizione smooth e centrala nella viewport
                   const cardRect = newCard.getBoundingClientRect()
                   const offset = cardRect.top + window.pageYOffset - (window.innerHeight - cardRect.height) / 2
                   window.scrollTo({
@@ -521,7 +495,6 @@ export default defineComponent({
 
     // Funzione per caricare la disponibilità per la data selezionata
     async function loadAvailability() {
-      // Prevent the calendar from reopening when clicking "Mostra disponibilità"
       menu.value = false
       if (!selectedDate.value) {
         $q.notify({ type: 'warning', message: 'Seleziona prima una data' })
@@ -530,7 +503,6 @@ export default defineComponent({
       loading.value = true
       availableSlots.value = []
       slotsMap.value = {}
-      // Assicuriamoci che la data sia nel formato YYYY-MM-DD
       const formattedDate = selectedDate.value.split('T')[0]
       if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
         console.error('Invalid date format:', selectedDate.value)
@@ -542,7 +514,6 @@ export default defineComponent({
         return
       }
 
-      // Carica i blocchi di disponibilità per la data selezionata
       const { data: availabilityData, error: availabilityError } = await supabase
         .from('booking_availability')
         .select('*')
@@ -558,7 +529,6 @@ export default defineComponent({
         return
       }
 
-      // Genera dinamicamente gli slot orari dai blocchi
       let dynamicTimeSlots = []
       availabilityData.forEach((block) => {
         const slots = generateSlots(block.orario_inizio, block.orario_fine)
@@ -567,10 +537,9 @@ export default defineComponent({
       dynamicTimeSlots = [...new Set(dynamicTimeSlots)].sort()
       availableTimeSlots.value = dynamicTimeSlots
 
-      const startOfDay = `${formattedDate}T00:00:00.000Z` // Modificato per UTC
-      const endOfDay = `${formattedDate}T23:59:59.999Z` // Modificato per UTC
+      const startOfDay = `${formattedDate}T00:00:00.000Z`
+      const endOfDay = `${formattedDate}T23:59:59.999Z`
 
-      // Esegui in parallelo la query per i giochi e per le prenotazioni della giornata
       const [{ data: giochi, error: giochiError }, { data: bookingsData, error: bookingsError }] =
         await Promise.all([
           supabase.from('giochi').select('*').eq('disponibile', true),
@@ -594,35 +563,32 @@ export default defineComponent({
         return
       }
 
-      // Crea un Set di ID dei giochi con prenotazioni attive
       const activeGameIds = new Set(bookingsData?.map((b) => b.gioco_id) || [])
 
-      // Prepara le opzioni per il menu a tendina (solo giochi senza prenotazioni attive)
       availableGamesOptions.value = await Promise.all(
         giochi
           .filter((game) => !activeGameIds.has(game.id))
           .map(async (game) => {
             let imageUrl =
               'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png'
-
             if (game.copertina) {
               const {
                 data: { publicUrl },
               } = supabase.storage.from('Copertine_giochi').getPublicUrl(game.copertina)
               imageUrl = publicUrl
             }
-
             return {
               label: game.nome,
               value: game.id,
               copertina: imageUrl,
               difficulty: game.difficolta,
               players: `${game.giocatori_min}-${game.giocatori_max} giocatori`,
+              minPlayers: game.giocatori_min,
+              maxPlayers: game.giocatori_max,
             }
-          }),
+          })
       )
 
-      // Processa i giochi: aggiungi l'URL della copertina e il flag di prenotazioni attive
       const processedGames = await Promise.all(
         giochi.map(async (game) => {
           const hasActiveBookings = activeGameIds.has(game.id)
@@ -642,11 +608,10 @@ export default defineComponent({
               'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png',
             hasActiveBookings,
           }
-        }),
+        })
       )
       availableSlots.value = processedGames
 
-      // Costruisci una mappa delle prenotazioni per ID gioco per una ricerca più veloce
       const bookingsByGame = {}
       if (bookingsData) {
         console.log('Bookings found for date:', bookingsData)
@@ -658,14 +623,13 @@ export default defineComponent({
         })
       }
 
-      // Per ogni gioco e per ogni slot, calcola i posti liberi
       for (const game of processedGames) {
         slotsMap.value[game.id] = {}
         const gameBookings = bookingsByGame[game.id] || []
         let hasAnyBooking = false
 
         for (const slot of availableTimeSlots.value) {
-          const startIso = `${formattedDate}T${slot}:00Z` // Modificato per UTC
+          const startIso = `${formattedDate}T${slot}:00Z`
           const slotStartTime = new Date(startIso).getTime()
           const durata = game.durata_media || 60
           const slotEndTime = slotStartTime + durata * 60 * 1000
@@ -687,17 +651,13 @@ export default defineComponent({
           }
 
           const freeSeats = disableSlot ? 0 : Math.max(0, game.giocatori_max - seatsBookedExact)
-
           slotsMap.value[game.id][slot] = {
             postiLiberi: freeSeats,
             hasActiveBooking: seatsBookedExact > 0,
           }
         }
-
-        // Aggiorna il flag hasActiveBookings del gioco
         game.hasActiveBookings = hasAnyBooking
       }
-
       loading.value = false
     }
 
@@ -760,11 +720,17 @@ export default defineComponent({
       const startDateObj = new Date(startIso)
       const durata = selectedGame.value.durata_media || 60
       const endDateObj = new Date(startDateObj.getTime() + durata * 60000)
-      const endIso = endDateObj.getFullYear() + '-' +
-        String(endDateObj.getMonth() + 1).padStart(2, '0') + '-' +
-        String(endDateObj.getDate()).padStart(2, '0') + 'T' +
-        String(endDateObj.getHours()).padStart(2, '0') + ':' +
-        String(endDateObj.getMinutes()).padStart(2, '0') + ':' +
+      const endIso =
+        endDateObj.getFullYear() +
+        '-' +
+        String(endDateObj.getMonth() + 1).padStart(2, '0') +
+        '-' +
+        String(endDateObj.getDate()).padStart(2, '0') +
+        'T' +
+        String(endDateObj.getHours()).padStart(2, '0') +
+        ':' +
+        String(endDateObj.getMinutes()).padStart(2, '0') +
+        ':' +
         String(endDateObj.getSeconds()).padStart(2, '0')
 
       try {
@@ -820,19 +786,17 @@ export default defineComponent({
       validatePeopleCount,
       searchQuery,
       filters,
-      filteredGames,
       resetFilters,
       isDateAvailable,
-      onDateSelected,
-      availableTimeRanges,
-      loading,
-      selectedGameToAdd,
-      availableGamesOptions,
+      filteredGameOptions,
       displayedGames,
       onGameSelected,
       partiallyOccupiedGames,
       newlySelectedGames,
       getDifficultyColor,
+      selectedGameToAdd,
+      availableGamesOptions,
+      onDateSelected,
     }
   },
 })
@@ -840,31 +804,29 @@ export default defineComponent({
 
 <style scoped>
 .game-card {
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 2px solid transparent;
+}
 
-  &.has-bookings {
-    border-color: var(--q-primary);
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 0;
-      height: 0;
-      border-style: solid;
-      border-width: 0 40px 40px 0;
-      border-color: transparent var(--q-primary) transparent transparent;
-      z-index: 1;
-    }
-  }
+.game-card.has-bookings {
+  border-color: var(--q-primary);
+}
+.game-card.has-bookings::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 40px 40px 0;
+  border-color: transparent var(--q-primary) transparent transparent;
+  z-index: 1;
+}
 
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  }
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .filter-section {

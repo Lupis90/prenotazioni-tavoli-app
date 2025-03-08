@@ -1,29 +1,33 @@
 <template>
-  <div class="admin-dashboard">
+  <div class="admin-dashboard q-pa-md">
     <h1>Dashboard Amministrativa</h1>
 
-    <div class="row q-col-gutter-md">
-      <section class="date-filter col-auto q-mb-lg">
-        <q-date
-          v-model="selectedDate"
-          mask="YYYY-MM-DD"
-          :options="isValidDate"
-          emit-immediately
-          @update:model-value="onDateSelected"
-        />
-      </section>
+    <q-card>
+      <q-card-section class="row q-col-gutter-md items-center">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+          <q-label class="text-h6">Seleziona una data:</q-label>
+          <q-date
+            v-model="selectedDate"
+            mask="YYYY-MM-DD"
+            :options="isValidDate"
+            emit-immediately
+            @update:model-value="onDateSelected"
+          />
+        </div>
 
-      <section v-if="selectedDate" class="total-people col-auto q-mb-lg">
-        <q-card>
+        <q-card v-if="selectedDate" class="col-12 col-sm-6 col-md-4 col-lg-3 bg-primary-lighten-4">
           <q-card-section>
-            <div class="text-h6">
-              Totale persone prenotate il {{ formatDate(selectedDate) }}:
-              <strong>{{ totalPeopleForSelectedDate }}</strong>
+            <div class="text-center">
+              <q-icon name="people" size="lg" color="primary" />
+              <div class="text-h4 q-mt-sm">
+                Totale persone prenotate il {{ formatDate(selectedDate) }}:
+                <strong class="text-primary">{{ totalPeopleForSelectedDate }}</strong>
+              </div>
             </div>
           </q-card-section>
         </q-card>
-      </section>
-    </div>
+      </q-card-section>
+    </q-card>
 
     <div class="row q-col-gutter-md">
       <section class="daily-bookings col q-mt-lg">
@@ -109,27 +113,21 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { supabase } from '../supabase'
-import { date } from 'quasar' // Importa date utilities da Quasar
+import { date, useQuasar } from 'quasar'
 
 export default {
   name: 'AdminDashboard',
   setup() {
+    const $q = useQuasar();
     const selectedDate = ref('')
     const gamesWithBookings = ref([])
     const selectedGameId = ref(null)
     const totalPeopleForSelectedDate = ref(0)
     const loading = ref(false)
-
-    // Prenotazioni giornaliere
     const dailyBookings = ref([])
     const dailyBookingsColumns = [
       { name: 'date', label: 'Data', field: 'date', align: 'left' },
-      {
-        name: 'totalBookings',
-        label: 'Totale Prenotazioni',
-        field: 'totalBookings',
-        align: 'center',
-      },
+      { name: 'totalBookings', label: 'Totale Prenotazioni', field: 'totalBookings', align: 'center' },
     ]
 
     const isValidDate = (date) => {
@@ -138,111 +136,10 @@ export default {
       return selected >= today
     }
 
-    // Funzione per formattare la data
     const formatDate = (dateStr) => {
-      return date.formatDate(dateStr, 'DD/MM/YYYY') // Usa Quasar date utilities
+      return date.formatDate(dateStr, 'DD/MM/YYYY')
     }
 
-    const fetchDailyBookings = async () => {
-      loading.value = true
-      const { data, error } = await supabase
-        .from('prenotazioni')
-        .select('data_inizio, numero_persone', { count: 'exact' })
-        .order('data_inizio', { ascending: false }) // Ordina per data
-
-      if (error) {
-        console.error('Errore nel recupero delle prenotazioni giornaliere:', error)
-        loading.value = false
-        return
-      }
-
-      const bookingsByDate = {}
-
-      // Itera attraverso i dati e raggruppa per data
-      data.forEach((booking) => {
-        const dateOnly = booking.data_inizio.split('T')[0] // Estrai solo la data (YYYY-MM-DD)
-        if (!bookingsByDate[dateOnly]) {
-          bookingsByDate[dateOnly] = 0
-        }
-        bookingsByDate[dateOnly] += booking.numero_persone
-      })
-
-      // Trasforma l'oggetto in un array per la tabella
-      dailyBookings.value = Object.entries(bookingsByDate).map(([date, totalBookings]) => ({
-        date,
-        totalBookings,
-      }))
-      loading.value = false
-    }
-
-    const fetchGameBookings = async (dateStr) => {
-      loading.value = true // Mostra il loader
-      const startOfDay = `${dateStr}T00:00:00`
-      const endOfDay = `${dateStr}T23:59:59`
-
-      const { data, error } = await supabase
-        .from('prenotazioni')
-        .select(
-          `id, numero_persone, data_inizio, gioco_id,
-          giochi:gioco_id ( id, nome, copertina )`,
-        )
-        .gte('data_inizio', startOfDay)
-        .lte('data_inizio', endOfDay)
-
-      if (error) {
-        console.error('Errore nel recupero delle prenotazioni:', error)
-        loading.value = false // Nascondi il loader in caso di errore
-        return
-      }
-
-      totalPeopleForSelectedDate.value = data.reduce(
-        (acc, booking) => acc + booking.numero_persone,
-        0,
-      )
-
-      const gameBookings = {}
-      for (const booking of data) {
-        const gameId = booking.gioco_id
-        if (!gameBookings[gameId]) {
-          gameBookings[gameId] = {
-            id: gameId,
-            nome: booking.giochi.nome,
-            copertina: booking.giochi.copertina
-              ? supabase.storage.from('Copertine_giochi').getPublicUrl(booking.giochi.copertina)
-                  .data.publicUrl
-              : 'default-game-cover.png',
-            slots: [],
-          }
-        }
-
-        const timeSlot = booking.data_inizio.split('T')[1].substring(0, 5)
-        const existingSlot = gameBookings[gameId].slots.find((s) => s.time === timeSlot)
-        if (existingSlot) {
-          existingSlot.persone += booking.numero_persone
-        } else {
-          gameBookings[gameId].slots.push({ time: timeSlot, persone: booking.numero_persone })
-        }
-      }
-
-      for (const game of Object.values(gameBookings)) {
-        game.slots.sort((a, b) => a.time.localeCompare(b.time))
-      }
-
-      gamesWithBookings.value = Object.values(gameBookings)
-      loading.value = false // Nascondi il loader dopo aver caricato i dati
-    }
-
-    const onDateSelected = async (newDate) => {
-      selectedDate.value = newDate
-      selectedGameId.value = null
-      // menu.value = false // Non più necessario
-      await fetchGameBookings(newDate)
-    }
-
-    const selectGame = (gameId) => {
-      selectedGameId.value = gameId === selectedGameId.value ? null : gameId
-    }
-    // Funzione per la formattazione condizionale delle righe
     const getRowClass = (row) => {
       const total = row.totalBookings
       if (total >= 0 && total <= 6) {
@@ -250,17 +147,120 @@ export default {
       } else if (total >= 7 && total <= 12) {
         return 'bg-yellow-2' // Giallo chiaro
       } else if (total >= 13 && total <= 16) {
-        return 'bg-orange-2' //Arancione
+        return 'bg-orange-2' // Arancione
       } else if (total > 16) {
         return 'bg-red-2' // Rosso chiaro
       }
       return '' // Nessuna classe aggiuntiva
     }
 
+
+    const fetchDailyBookings = async () => {
+      loading.value = true;
+      try {
+        const { data } = await supabase
+          .from('prenotazioni')
+          .select('data_inizio, numero_persone', { count: 'exact' })
+          .order('data_inizio', { ascending: false });
+
+        const bookingsByDate = {};
+        data.forEach((booking) => {
+          const dateOnly = booking.data_inizio.split('T')[0];
+          if (!bookingsByDate[dateOnly]) {
+            bookingsByDate[dateOnly] = 0;
+          }
+          bookingsByDate[dateOnly] += booking.numero_persone;
+        });
+
+        dailyBookings.value = Object.entries(bookingsByDate).map(([date, totalBookings]) => ({
+          date,
+          totalBookings,
+        }));
+
+      } catch {
+            $q.notify({
+                color: 'negative',
+                message: 'Si è verificato un errore durante il caricamento dei dati.',
+                icon: 'error'
+            });
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    const fetchGameBookings = async (dateStr) => {
+        loading.value = true
+        try {
+            const startOfDay = `${dateStr}T00:00:00`;
+            const endOfDay = `${dateStr}T23:59:59`;
+
+            const { data } = await supabase
+            .from('prenotazioni')
+            .select(
+            `id, numero_persone, data_inizio, gioco_id,
+            giochi:gioco_id ( id, nome, copertina )`,
+            )
+            .gte('data_inizio', startOfDay)
+            .lte('data_inizio', endOfDay)
+
+            totalPeopleForSelectedDate.value = data.reduce(
+                (acc, booking) => acc + booking.numero_persone,
+                0,
+            );
+
+            const gameBookings = {};
+
+            for (const booking of data) {
+                const gameId = booking.gioco_id;
+                if (!gameBookings[gameId]) {
+                    gameBookings[gameId] = {
+                    id: gameId,
+                    nome: booking.giochi.nome,
+                    copertina: booking.giochi.copertina
+                    ? supabase.storage.from('Copertine_giochi').getPublicUrl(booking.giochi.copertina).data.publicUrl
+                    : 'default-game-cover.png',
+                    slots: [],
+                    };
+                }
+
+                const timeSlot = booking.data_inizio.split('T')[1].substring(0, 5);
+                const existingSlot = gameBookings[gameId].slots.find((s) => s.time === timeSlot);
+
+                if (existingSlot) {
+                    existingSlot.persone += booking.numero_persone;
+                } else {
+                    gameBookings[gameId].slots.push({ time: timeSlot, persone: booking.numero_persone });
+                }
+            }
+
+            for (const game of Object.values(gameBookings)) {
+                 game.slots.sort((a, b) => a.time.localeCompare(b.time));
+            }
+
+            gamesWithBookings.value = Object.values(gameBookings);
+        } catch {
+            $q.notify({
+                color: 'negative',
+                message: "Si è verificato un errore nel caricamento dei giochi prenotati",
+                icon: 'error'
+            })
+        } finally {
+            loading.value = false
+        }
+
+    }
+
+    const onDateSelected = async (newDate) => {
+      selectedDate.value = newDate
+      selectedGameId.value = null
+      await fetchGameBookings(newDate)
+    }
+
+
     onMounted(async () => {
       const today = new Date().toISOString().split('T')[0]
       selectedDate.value = today
-      await fetchDailyBookings() // Carica le prenotazioni giornaliere
+      await fetchDailyBookings()
       await fetchGameBookings(today)
     })
 
@@ -270,13 +270,12 @@ export default {
       selectedGameId,
       totalPeopleForSelectedDate,
       onDateSelected,
-      selectGame,
       loading,
-      dailyBookings, // Per la tabella
-      dailyBookingsColumns, // Colonne della tabella
-      formatDate, // Funzione per formattare
+      dailyBookings,
+      dailyBookingsColumns,
+      formatDate,
       isValidDate,
-      getRowClass, // Aggiungi la funzione per le classi
+      getRowClass
     }
   },
 }
