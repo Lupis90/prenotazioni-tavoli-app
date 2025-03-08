@@ -300,7 +300,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted } from 'vue'
+import { defineComponent, ref, computed, onMounted, nextTick } from 'vue'
 import { supabase } from 'src/supabase'
 import { useQuasar } from 'quasar'
 import quasarLang from 'quasar/lang/it'
@@ -496,6 +496,23 @@ export default defineComponent({
           console.log('Found game:', game)
           if (!selectedGames.value.includes(gameId)) {
             selectedGames.value.push(gameId)
+            // Usa nextTick per assicurarsi che il DOM sia stato aggiornato
+            nextTick(() => {
+              // Attendi un momento per assicurarsi che la card sia renderizzata
+              setTimeout(() => {
+                // Trova la card nel container dei giochi appena selezionati
+                const newCard = document.querySelector('.q-mt-lg .game-card:last-child')
+                if (newCard) {
+                  // Scrolla alla card con una transizione smooth e centrala nella viewport
+                  const cardRect = newCard.getBoundingClientRect()
+                  const offset = cardRect.top + window.pageYOffset - (window.innerHeight - cardRect.height) / 2
+                  window.scrollTo({
+                    top: offset,
+                    behavior: 'smooth'
+                  })
+                }
+              }, 100)
+            })
           }
           selectedGameToAdd.value = null
         }
