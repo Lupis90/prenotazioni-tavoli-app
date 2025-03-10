@@ -1,6 +1,14 @@
 // app global css in SCSS form
 @import './pages/prenota.scss';
 
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
 body {
   &.body--dark {
     --q-primary: #263238;

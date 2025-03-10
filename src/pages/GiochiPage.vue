@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <div class="row items-center q-mb-lg">
-      <div class="text-h5 text-weight-bold q-mr-auto">Catalogo Giochi</div>
+      <div class="text-h3 text-weight-bold q-mr-auto text-gradient">La nostra libreria</div>
       <q-btn-toggle
         v-model="viewType"
         flat
@@ -13,18 +13,55 @@
     </div>
 
     <div class="search-filters q-mb-md">
-      <q-input v-model="searchText" dense outlined placeholder="Cerca gioco..." class="q-mb-md">
-        <template v-slot:append>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-      <q-slide-transition>
-        <div v-show="showFilters" class="filters-container q-mt-sm">
-          <q-chip v-model="filterAvailable" icon="check_circle" clickable>
-            Solo disponibili
-          </q-chip>
+      <div class="row items-center q-gutter-x-md">
+        <div class="col-grow">
+          <q-input v-model="searchText" size="sm" outlined placeholder="Cerca gioco...">
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
         </div>
-      </q-slide-transition>
+        <div class="col-auto">
+          <q-btn-dropdown color="primary" icon="filter_list" label="Filtri" size="sm" class="search-filter-btn">
+            <q-card style="min-width: 300px">
+              <q-card-section>
+                <div class="q-mb-md">
+                  <div class="text-subtitle2 q-mb-sm">Numero giocatori</div>
+                  <q-input
+                    v-model.number="filters.groupPlayers"
+                    type="number"
+                    label="Numero giocatori"
+                    dense
+                    outlined
+                    style="width: 100px"
+                  />
+                </div>
+                <div class="q-mb-md">
+                  <div class="text-subtitle2 q-mb-sm">Difficoltà</div>
+                  <q-option-group
+                    v-model="filters.difficulty"
+                    :options="[
+                      { label: 'Facile', value: 'facile' },
+                      { label: 'Medio', value: 'medio' },
+                      { label: 'Difficile', value: 'difficile' }
+                    ]"
+                    type="checkbox"
+                    dense
+                  />
+                </div>
+                <div>
+                  <q-chip v-model="filterAvailable" icon="check_circle" clickable>
+                    Solo disponibili
+                  </q-chip>
+                </div>
+              </q-card-section>
+              <q-card-actions align="right" class="q-pa-sm">
+                <q-btn flat label="Reset" color="grey" @click="resetFilters" />
+              </q-card-actions>
+            </q-card>
+          </q-btn-dropdown>
+        </div>
+      </div>
     </div>
 
     <transition-group name="q-transition--fade" class="row q-col-gutter-md" tag="div" appear>
@@ -141,18 +178,50 @@ export default defineComponent({
     const loadingGiochi = ref(false)
     const searchText = ref('')
     const viewType = ref('grid')
-    const showFilters = ref(false)
     const filterAvailable = ref(false)
+    const filters = ref({
+      groupPlayers: null,
+      difficulty: [],
+    })
+
+    const resetFilters = () => {
+      filters.value = {
+        groupPlayers: null,
+        difficulty: [],
+      }
+      filterAvailable.value = false
+    }
 
     const filteredGiochi = computed(() => {
-      const search = searchText.value.toLowerCase().trim()
-      if (!search) return giochi.value
+      let filtered = giochi.value
 
-      return giochi.value.filter(
-        (gioco) =>
-          gioco.nome.toLowerCase().includes(search) &&
-          (!filterAvailable.value || gioco.disponibile),
-      )
+      // Filter by search text
+      const search = searchText.value.toLowerCase().trim()
+      if (search) {
+        filtered = filtered.filter(gioco => gioco.nome.toLowerCase().includes(search))
+      }
+
+      // Filter by availability
+      if (filterAvailable.value) {
+        filtered = filtered.filter(gioco => gioco.disponibile)
+      }
+
+      // Filter by number of players
+      if (filters.value.groupPlayers) {
+        filtered = filtered.filter(gioco =>
+          filters.value.groupPlayers >= gioco.giocatori_min &&
+          filters.value.groupPlayers <= gioco.giocatori_max
+        )
+      }
+
+      // Filter by difficulty
+      if (filters.value.difficulty.length > 0) {
+        filtered = filtered.filter(gioco =>
+          filters.value.difficulty.includes(gioco.difficolta)
+        )
+      }
+
+      return filtered
     })
 
     const getImageUrl = (fileName) => {
@@ -197,8 +266,9 @@ export default defineComponent({
       selectedGame,
       showGameDetails,
       viewType,
-      showFilters,
       filterAvailable,
+      filters,
+      resetFilters,
       openGameDetails,
     }
   },
@@ -237,6 +307,30 @@ export default defineComponent({
   &-enter-from,
   &-leave-to {
     opacity: 0;
+  }
+}
+
+.search-filter-btn {
+  height: 32px;
+}
+
+.search-filters {
+  .q-field--outlined {
+    .q-field__control {
+      height: 32px;
+      min-height: 32px;
+      padding: 0 8px;
+    }
+    .q-field__append {
+      height: 32px;
+      min-height: 32px;
+      padding: 0;
+    }
+    .q-icon {
+      font-size: 20px;
+      height: 32px;
+      line-height: 32px;
+    }
   }
 }
 </style>

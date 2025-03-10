@@ -2,13 +2,8 @@
   <q-page padding class="bg-grey-1">
     <!-- Hero Section -->
     <div class="text-center q-mb-xl">
-      <h2 class="text-gradient">Prenota il tuo gioco</h2>
-      <img
-        src="/images/separator.svg"
-        alt="Decorative separator"
-        class="q-mt-md separator-image"
-        style="width: 640px; height: 96px"
-      />
+      <h2 class="text-gradient q-pb-md">Prenota il tuo gioco</h2>
+
     </div>
 
     <!-- Date Selection Card -->
@@ -19,7 +14,7 @@
           label="Seleziona data"
           readonly
           class="col-grow"
-          input-class="text-subtitle1"
+          input-class="text-subtitle1 q-placeholder"
           :disable="loading"
         >
           <template v-slot:prepend>
@@ -34,16 +29,6 @@
             @update:model-value="onDateSelected"
           />
         </q-menu>
-        <q-btn
-          color="primary"
-          label="Mostra disponibilità"
-          @click="loadAvailability"
-          icon="search"
-          class="q-px-xl"
-          unelevated
-          rounded
-          :disable="!selectedDate"
-        />
       </div>
     </div>
 
@@ -908,5 +893,8 @@ export default defineComponent({
 .game-details .q-badge {
   font-size: 0.7rem;
   padding: 2px 6px;
+}
+.q-placeholder input::placeholder {
+  text-align: center;
 }
 </style>
