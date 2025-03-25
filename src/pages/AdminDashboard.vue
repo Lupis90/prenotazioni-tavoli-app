@@ -68,9 +68,9 @@
                 class="calendar-day"
                 :class="[
                   { 'other-month': !dayObj.currentMonth },
-                  { today: isToday(dayObj.date) },
-                  { selected: isSelected(dayObj.date) },
-                  getBookingClass(dayObj.bookings),
+                  { 'today': isToday(dayObj.date) },
+                  { 'selected': isSelected(dayObj.date) },
+                  getBookingClass(dayObj.bookings)
                 ]"
                 @click="selectDate(dayObj.date)"
               >
@@ -116,10 +116,7 @@
             />
           </div>
 
-          <q-card
-            v-if="selectedDate"
-            class="col-12 col-sm-6 col-md-4 col-lg-3 bg-primary-lighten-4"
-          >
+          <q-card v-if="selectedDate" class="col-12 col-sm-6 col-md-4 col-lg-3 bg-primary-lighten-4">
             <q-card-section>
               <div class="text-center">
                 <q-icon name="people" size="lg" color="primary" />
@@ -222,19 +219,97 @@
               <q-card-section>
                 <div class="text-h6">Dettaglio Prenotazioni</div>
                 <q-list dense>
-                  <q-item v-for="slot in game.slots" :key="slot.time">
-                    <q-item-section>
-                      <q-item-label>
-                        <div class="row items-center justify-between">
-                          <div class="text-weight-medium">Orario: {{ slot.time }}</div>
-                          <div>
-                            <q-icon name="people" size="sm" class="q-mr-xs" />
-                            {{ slot.persone }} persone
-                          </div>
+                  <q-expansion-item
+                    v-for="slot in game.slots"
+                    :key="slot.time"
+                    :label="`Orario: ${slot.time} - ${slot.persone} persone`"
+                    icon="access_time"
+                    expand-separator
+                    header-class="bg-blue-1"
+                  >
+                    <!-- Lista delle prenotazioni individuali per questo slot -->
+                    <q-card>
+                      <q-card-section>
+                        <div class="text-subtitle2 q-mb-sm">Clienti prenotati:</div>
+
+                        <q-list bordered separator>
+                          <q-item v-for="(booking, index) in slot.bookings" :key="index" clickable v-ripple>
+                            <q-item-section avatar>
+                              <q-avatar color="primary" text-color="white">
+                                {{ getInitials(booking.nome) }}
+                              </q-avatar>
+                            </q-item-section>
+
+                            <q-item-section>
+                              <q-item-label>{{ booking.nome }}</q-item-label>
+                              <q-item-label caption lines="1">
+                                <div class="row items-center">
+                                  <q-icon name="email" size="xs" class="q-mr-xs" />
+                                  {{ booking.email }}
+                                  <q-icon name="phone" size="xs" class="q-ml-md q-mr-xs" />
+                                  {{ booking.telefono }}
+                                </div>
+                              </q-item-label>
+                              <q-item-label caption>
+                                <q-badge :color="getStatusColor(booking.stato)">
+                                  {{ booking.stato }}
+                                </q-badge>
+                              </q-item-label>
+                            </q-item-section>
+
+                            <q-item-section side>
+                              <div class="text-grey-8">
+                                <q-icon name="people" size="xs" class="q-mr-xs" />
+                                {{ booking.numero_persone }}
+                                {{ booking.numero_persone === 1 ? 'persona' : 'persone' }}
+                              </div>
+                            </q-item-section>
+
+                            <q-item-section side>
+                              <q-btn
+                                flat
+                                round
+                                dense
+                                icon="more_vert"
+                                @click.stop="showBookingActions(booking)"
+                              >
+                                <q-menu>
+                                  <q-list style="min-width: 100px">
+                                    <q-item clickable v-close-popup @click="viewBookingDetails(booking)">
+                                      <q-item-section avatar>
+                                        <q-icon name="visibility" />
+                                      </q-item-section>
+                                      <q-item-section>Dettagli</q-item-section>
+                                    </q-item>
+
+                                    <q-item clickable v-close-popup @click="editBooking(booking)">
+                                      <q-item-section avatar>
+                                        <q-icon name="edit" />
+                                      </q-item-section>
+                                      <q-item-section>Modifica</q-item-section>
+                                    </q-item>
+
+                                    <q-separator />
+
+                                    <q-item clickable v-close-popup @click="confirmDeleteBooking(booking)">
+                                      <q-item-section avatar>
+                                        <q-icon name="delete" color="negative" />
+                                      </q-item-section>
+                                      <q-item-section class="text-negative">Cancella</q-item-section>
+                                    </q-item>
+                                  </q-list>
+                                </q-menu>
+                              </q-btn>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+
+                        <div v-if="slot.bookings.length === 0" class="text-center q-pa-md text-grey">
+                          Nessuna prenotazione individuale trovata per questo slot.
                         </div>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
+                      </q-card-section>
+                    </q-card>
+                  </q-expansion-item>
                 </q-list>
               </q-card-section>
             </q-card>
@@ -243,6 +318,165 @@
       </q-list>
     </section>
   </div>
+
+  <!-- Dialog di dettaglio prenotazione -->
+  <q-dialog v-model="bookingDetailsDialog">
+    <q-card style="min-width: 400px">
+      <q-card-section class="bg-primary text-white">
+        <div class="text-h6">Dettagli Prenotazione</div>
+      </q-card-section>
+
+      <q-card-section v-if="currentBooking">
+        <q-list dense>
+          <q-item>
+            <q-item-section>
+              <q-item-label caption>Cliente</q-item-label>
+              <q-item-label>{{ currentBooking.nome }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label caption>Email</q-item-label>
+              <q-item-label>{{ currentBooking.email }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label caption>Telefono</q-item-label>
+              <q-item-label>{{ currentBooking.telefono }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label caption>Data e ora</q-item-label>
+              <q-item-label>{{ formatDate(currentBooking.data_inizio.split('T')[0]) }} alle {{ currentBooking.data_inizio.split('T')[1].substring(0,5) }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label caption>Numero persone</q-item-label>
+              <q-item-label>{{ currentBooking.numero_persone }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label caption>Stato</q-item-label>
+              <q-item-label>
+                <q-badge :color="getStatusColor(currentBooking.stato)">
+                  {{ currentBooking.stato }}
+                </q-badge>
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Chiudi" color="primary" v-close-popup />
+        <q-btn flat label="Modifica" color="secondary" @click="editBooking(currentBooking); bookingDetailsDialog = false" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- Dialog conferma eliminazione -->
+  <q-dialog v-model="deleteConfirmDialog">
+    <q-card>
+      <q-card-section class="bg-negative text-white">
+        <div class="text-h6">Conferma Eliminazione</div>
+      </q-card-section>
+
+      <q-card-section v-if="currentBooking">
+        <p>Sei sicuro di voler eliminare la prenotazione di <strong>{{ currentBooking.nome }}</strong> per il <strong>{{ formatDate(currentBooking.data_inizio.split('T')[0]) }}</strong> alle <strong>{{ currentBooking.data_inizio.split('T')[1].substring(0,5) }}</strong>?</p>
+        <p class="text-caption text-negative">Questa azione non può essere annullata.</p>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Annulla" color="primary" v-close-popup />
+        <q-btn flat label="Elimina" color="negative" @click="deleteBooking" :loading="loading" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- Dialog modifica prenotazione -->
+  <q-dialog v-model="editBookingDialog" persistent>
+    <q-card style="min-width: 400px">
+      <q-card-section class="bg-secondary text-white">
+        <div class="text-h6">Modifica Prenotazione</div>
+      </q-card-section>
+
+      <q-card-section v-if="currentBooking">
+        <q-form @submit="saveBookingChanges">
+          <q-input
+            v-model="currentBooking.nome"
+            label="Nome cliente *"
+            filled
+            :rules="[val => !!val || 'Il nome è obbligatorio']"
+            class="q-mb-md"
+          />
+
+          <q-input
+            v-model="currentBooking.email"
+            label="Email"
+            filled
+            type="email"
+            class="q-mb-md"
+          />
+
+          <q-input
+            v-model="currentBooking.telefono"
+            label="Telefono *"
+            filled
+            :rules="[val => !!val || 'Il telefono è obbligatorio']"
+            class="q-mb-md"
+          />
+
+          <q-input
+            v-model.number="currentBooking.numero_persone"
+            label="Numero persone *"
+            filled
+            type="number"
+            min="1"
+            :rules="[
+              val => !!val || 'Il numero di persone è obbligatorio',
+              val => val > 0 || 'Il numero deve essere maggiore di zero'
+            ]"
+            class="q-mb-md"
+          />
+
+          <q-select
+            v-model="currentBooking.stato"
+            :options="['attivo', 'completato', 'cancellato']"
+            label="Stato prenotazione *"
+            filled
+            class="q-mb-md"
+            :rules="[val => !!val || 'Lo stato è obbligatorio']"
+          >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>
+                    <q-badge :color="getStatusColor(scope.opt)">
+                      {{ scope.opt }}
+                    </q-badge>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+        </q-form>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Annulla" color="primary" v-close-popup />
+        <q-btn flat label="Salva" color="secondary" @click="saveBookingChanges" :loading="loading" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script>
@@ -253,7 +487,7 @@ import { date, useQuasar } from 'quasar'
 export default {
   name: 'AdminDashboard',
   setup() {
-    const $q = useQuasar()
+    const $q = useQuasar();
 
     // Gestione viste
     const activeView = ref('calendar')
@@ -267,12 +501,7 @@ export default {
     const dailyBookings = ref([])
     const dailyBookingsColumns = [
       { name: 'date', label: 'Data', field: 'date', align: 'left' },
-      {
-        name: 'totalBookings',
-        label: 'Totale Prenotazioni',
-        field: 'totalBookings',
-        align: 'center',
-      },
+      { name: 'totalBookings', label: 'Totale Prenotazioni', field: 'totalBookings', align: 'center' },
     ]
 
     // Dati per il calendario
@@ -286,20 +515,8 @@ export default {
     const currentYear = computed(() => currentDate.value.getFullYear())
     const currentMonth = computed(() => currentDate.value.getMonth())
     const currentMonthName = computed(() => {
-      const months = [
-        'Gennaio',
-        'Febbraio',
-        'Marzo',
-        'Aprile',
-        'Maggio',
-        'Giugno',
-        'Luglio',
-        'Agosto',
-        'Settembre',
-        'Ottobre',
-        'Novembre',
-        'Dicembre',
-      ]
+      const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                     'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
       return months[currentMonth.value]
     })
 
@@ -329,7 +546,7 @@ export default {
           day: day,
           date: dateStr,
           currentMonth: false,
-          bookings: calendarData.value[dateStr] || 0,
+          bookings: calendarData.value[dateStr] || 0
         })
       }
 
@@ -342,7 +559,7 @@ export default {
           day: i,
           date: dateStr,
           currentMonth: true,
-          bookings: calendarData.value[dateStr] || 0,
+          bookings: calendarData.value[dateStr] || 0
         })
       }
 
@@ -356,7 +573,7 @@ export default {
           day: i,
           date: dateStr,
           currentMonth: false,
-          bookings: calendarData.value[dateStr] || 0,
+          bookings: calendarData.value[dateStr] || 0
         })
       }
 
@@ -453,7 +670,11 @@ export default {
         // Ottieni il primo e l'ultimo giorno del mese corrente visualizzato
         const year = currentYear.value
         const month = currentMonth.value
-        
+        const firstDay = new Date(year, month, 1)
+        const lastDay = new Date(year, month + 1, 0)
+
+        const startDate = formatDateForDB(firstDay)
+        const endDate = formatDateForDB(lastDay)
 
         // Query con range di date più ampio per includere giorni prima e dopo il mese corrente
         const prevMonth = new Date(year, month - 1, 1)
@@ -481,11 +702,12 @@ export default {
         })
 
         calendarData.value = bookingsByDate
-      } catch (err) {
+
+      } catch (error) {
         $q.notify({
           color: 'negative',
           message: 'Si è verificato un errore durante il caricamento dei dati del calendario.',
-          caption: `Errore: ${err.message}`,
+          icon: 'error'
         })
       } finally {
         loading.value = false
@@ -493,96 +715,120 @@ export default {
     }
 
     const fetchDailyBookings = async () => {
-      loading.value = true
+      loading.value = true;
       try {
         const { data } = await supabase
           .from('prenotazioni')
           .select('data_inizio, numero_persone', { count: 'exact' })
-          .order('data_inizio', { ascending: false })
+          .order('data_inizio', { ascending: false });
 
-        const bookingsByDate = {}
+        const bookingsByDate = {};
         data.forEach((booking) => {
-          const dateOnly = booking.data_inizio.split('T')[0]
+          const dateOnly = booking.data_inizio.split('T')[0];
           if (!bookingsByDate[dateOnly]) {
-            bookingsByDate[dateOnly] = 0
+            bookingsByDate[dateOnly] = 0;
           }
-          bookingsByDate[dateOnly] += booking.numero_persone
-        })
+          bookingsByDate[dateOnly] += booking.numero_persone;
+        });
 
         dailyBookings.value = Object.entries(bookingsByDate).map(([date, totalBookings]) => ({
           date,
           totalBookings,
-        }))
+        }));
 
         // Aggiorna anche i dati del calendario
-        calendarData.value = bookingsByDate
-      } catch (err) {
+        calendarData.value = bookingsByDate;
+
+      } catch (error) {
         $q.notify({
           color: 'negative',
           message: 'Si è verificato un errore durante il caricamento dei dati.',
-          caption: `Errore: ${err.message}`,
-        })
+          icon: 'error'
+        });
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const fetchGameBookings = async (dateStr) => {
       loading.value = true
       try {
-        const startOfDay = `${dateStr}T00:00:00`
-        const endOfDay = `${dateStr}T23:59:59`
+        const startOfDay = `${dateStr}T00:00:00`;
+        const endOfDay = `${dateStr}T23:59:59`;
 
+        // Ottieni tutte le prenotazioni con i dati dei clienti
         const { data } = await supabase
           .from('prenotazioni')
-          .select(
-            `id, numero_persone, data_inizio, gioco_id,
-            giochi:gioco_id ( id, nome, copertina )`,
-          )
+          .select(`
+            id,
+            numero_persone,
+            data_inizio,
+            gioco_id,
+            nome_cliente,
+            email_cliente,
+            telefono_cliente,
+            stato,
+            giochi:gioco_id ( id, nome, copertina )
+          `)
           .gte('data_inizio', startOfDay)
           .lte('data_inizio', endOfDay)
 
         totalPeopleForSelectedDate.value = data.reduce(
           (acc, booking) => acc + booking.numero_persone,
           0,
-        )
+        );
 
-        const gameBookings = {}
+        const gameBookings = {};
 
         for (const booking of data) {
-          const gameId = booking.gioco_id
+          const gameId = booking.gioco_id;
           if (!gameBookings[gameId]) {
             gameBookings[gameId] = {
               id: gameId,
               nome: booking.giochi.nome,
               copertina: booking.giochi.copertina
-                ? supabase.storage.from('Copertine_giochi').getPublicUrl(booking.giochi.copertina)
-                    .data.publicUrl
+                ? supabase.storage.from('Copertine_giochi').getPublicUrl(booking.giochi.copertina).data.publicUrl
                 : 'default-game-cover.png',
               slots: [],
-            }
+            };
           }
 
-          const timeSlot = booking.data_inizio.split('T')[1].substring(0, 5)
-          const existingSlot = gameBookings[gameId].slots.find((s) => s.time === timeSlot)
+          const timeSlot = booking.data_inizio.split('T')[1].substring(0, 5);
+          let existingSlot = gameBookings[gameId].slots.find((s) => s.time === timeSlot);
 
-          if (existingSlot) {
-            existingSlot.persone += booking.numero_persone
-          } else {
-            gameBookings[gameId].slots.push({ time: timeSlot, persone: booking.numero_persone })
+          if (!existingSlot) {
+            existingSlot = {
+              time: timeSlot,
+              persone: 0,
+              bookings: []
+            };
+            gameBookings[gameId].slots.push(existingSlot);
           }
+
+          // Aggiungi questa prenotazione allo slot
+          existingSlot.persone += booking.numero_persone;
+          existingSlot.bookings.push({
+            id: booking.id,
+            nome: booking.nome_cliente || 'Cliente senza nome',
+            email: booking.email_cliente || 'Email non fornita',
+            telefono: booking.telefono_cliente || 'Telefono non fornito',
+            numero_persone: booking.numero_persone,
+            data_inizio: booking.data_inizio,
+            stato: booking.stato || 'attivo'
+          });
         }
 
         for (const game of Object.values(gameBookings)) {
-          game.slots.sort((a, b) => a.time.localeCompare(b.time))
+          game.slots.sort((a, b) => a.time.localeCompare(b.time));
         }
 
-        gamesWithBookings.value = Object.values(gameBookings)
-      } catch (err) {
+        gamesWithBookings.value = Object.values(gameBookings);
+      } catch (error) {
+        console.error('Errore nel caricamento dei giochi prenotati:', error);
         $q.notify({
           color: 'negative',
-          message: 'Si è verificato un errore nel caricamento dei giochi prenotati',
-          caption: `Errore: ${err.message}`,
+          message: "Si è verificato un errore nel caricamento dei giochi prenotati",
+          icon: 'error'
         })
       } finally {
         loading.value = false
@@ -602,6 +848,132 @@ export default {
       await fetchGameBookings(today)
       await fetchCalendarData()
     })
+
+    // Dialog per visualizzare i dettagli completi di una prenotazione
+    const bookingDetailsDialog = ref(false)
+    const currentBooking = ref(null)
+
+    // Dialog per confermare l'eliminazione di una prenotazione
+    const deleteConfirmDialog = ref(false)
+
+    // Dialog per modificare una prenotazione
+    const editBookingDialog = ref(false)
+
+    // Funzioni per la gestione delle prenotazioni
+    const getInitials = (name) => {
+      if (!name) return '?';
+      return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    }
+
+    const viewBookingDetails = (booking) => {
+      currentBooking.value = booking;
+      bookingDetailsDialog.value = true;
+    }
+
+    const editBooking = (booking) => {
+      currentBooking.value = {...booking}; // Copia per evitare modifiche dirette
+      editBookingDialog.value = true;
+    }
+
+    const showBookingActions = (booking) => {
+      // Questa funzione gestisce l'apertura del menu contestuale
+      // Non serve implementare ulteriore logica perché il menu è gestito da q-menu
+    }
+
+    const confirmDeleteBooking = (booking) => {
+      currentBooking.value = booking;
+      deleteConfirmDialog.value = true;
+    }
+
+    const deleteBooking = async () => {
+      if (!currentBooking.value) return;
+
+      try {
+        loading.value = true;
+
+        const { error } = await supabase
+          .from('prenotazioni')
+          .delete()
+          .eq('id', currentBooking.value.id);
+
+        if (error) throw error;
+
+        $q.notify({
+          color: 'positive',
+          message: 'Prenotazione eliminata con successo',
+          icon: 'check'
+        });
+
+        // Ricarica i dati dopo l'eliminazione
+        await fetchGameBookings(selectedDate.value);
+        await fetchCalendarData();
+        deleteConfirmDialog.value = false;
+      } catch (error) {
+        console.error('Errore durante l\'eliminazione:', error);
+        $q.notify({
+          color: 'negative',
+          message: 'Errore durante l\'eliminazione della prenotazione',
+          icon: 'error'
+        });
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    // Funzione per ottenere il colore in base allo stato
+    const getStatusColor = (status) => {
+      switch(status) {
+        case 'attivo': return 'green';
+        case 'completato': return 'blue';
+        case 'cancellato': return 'red';
+        default: return 'grey';
+      }
+    }
+
+    const saveBookingChanges = async () => {
+      if (!currentBooking.value) return;
+
+      try {
+        loading.value = true;
+
+        const { error } = await supabase
+          .from('prenotazioni')
+          .update({
+            nome_cliente: currentBooking.value.nome,
+            email_cliente: currentBooking.value.email,
+            telefono_cliente: currentBooking.value.telefono,
+            numero_persone: currentBooking.value.numero_persone,
+            stato: currentBooking.value.stato
+          })
+          .eq('id', currentBooking.value.id);
+
+        if (error) throw error;
+
+        $q.notify({
+          color: 'positive',
+          message: 'Prenotazione aggiornata con successo',
+          icon: 'check'
+        });
+
+        // Ricarica i dati dopo l'aggiornamento
+        await fetchGameBookings(selectedDate.value);
+        editBookingDialog.value = false;
+      } catch (error) {
+        console.error('Errore durante l\'aggiornamento:', error);
+        $q.notify({
+          color: 'negative',
+          message: 'Errore durante l\'aggiornamento della prenotazione',
+          icon: 'error'
+        });
+      } finally {
+        loading.value = false;
+      }
+    }
 
     return {
       // Proprietà condivise
@@ -633,6 +1005,20 @@ export default {
       isSelected,
       selectDate,
       getBookingClass,
+
+      // Proprietà per la gestione dei dettagli delle prenotazioni
+      getInitials,
+      bookingDetailsDialog,
+      currentBooking,
+      deleteConfirmDialog,
+      editBookingDialog,
+      viewBookingDetails,
+      editBooking,
+      showBookingActions,
+      confirmDeleteBooking,
+      deleteBooking,
+      saveBookingChanges,
+      getStatusColor
     }
   },
 }
