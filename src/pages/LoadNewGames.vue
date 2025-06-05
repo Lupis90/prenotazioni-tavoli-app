@@ -1,5 +1,5 @@
 <template>
-  <q-page padding>
+  <q-page padding class="add-game-page">
     <div class="q-mb-md">
       <q-select
         filled
@@ -13,13 +13,13 @@
       />
     </div>
 
-    <div class="text-h4 text-center q-mb-lg">
+    <div class="text-h4 text-center text-gradient q-mb-lg page-title">
       {{ isEditing ? 'Modifica Gioco' : 'Aggiungi Nuovo Gioco' }}
     </div>
 
     <q-form @submit.prevent="submitGame" class="row justify-center">
-      <div class="col-12 col-md-6">
-        <q-card class="q-pa-md">
+      <div class="col-12 col-md-8">
+        <q-card class="q-pa-lg add-game-card">
           <q-card-section>
             <div class="q-gutter-md">
               <!-- Nome del gioco -->
@@ -369,6 +369,20 @@ export default {
 </script>
 
 <style scoped>
+.add-game-page {
+  background: linear-gradient(135deg, #fff4ec, #ffe8d6);
+  min-height: 100vh;
+}
+
+.add-game-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.page-title {
+  font-weight: 700;
+}
+
 .game-preview {
   position: relative;
   display: inline-block;
