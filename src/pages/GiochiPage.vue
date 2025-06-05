@@ -22,7 +22,13 @@
           </q-input>
         </div>
         <div class="col-auto">
-          <q-btn-dropdown color="primary" icon="filter_list" label="Filtri" size="sm" class="search-filter-btn">
+          <q-btn-dropdown
+            color="primary"
+            icon="filter_list"
+            label="Filtri"
+            size="sm"
+            class="search-filter-btn"
+          >
             <q-card style="min-width: 300px">
               <q-card-section>
                 <div class="q-mb-md">
@@ -43,7 +49,7 @@
                     :options="[
                       { label: 'Facile', value: 'facile' },
                       { label: 'Medio', value: 'medio' },
-                      { label: 'Difficile', value: 'difficile' }
+                      { label: 'Difficile', value: 'difficile' },
                     ]"
                     type="checkbox"
                     dense
@@ -155,6 +161,7 @@
 <script>
 import { defineComponent, ref, onMounted, computed } from 'vue'
 import { supabase } from 'src/supabase'
+import { GAME_COVER_BUCKET } from 'src/utils/constants'
 
 const columnsGiochi = [
   {
@@ -198,27 +205,26 @@ export default defineComponent({
       // Filter by search text
       const search = searchText.value.toLowerCase().trim()
       if (search) {
-        filtered = filtered.filter(gioco => gioco.nome.toLowerCase().includes(search))
+        filtered = filtered.filter((gioco) => gioco.nome.toLowerCase().includes(search))
       }
 
       // Filter by availability
       if (filterAvailable.value) {
-        filtered = filtered.filter(gioco => gioco.disponibile)
+        filtered = filtered.filter((gioco) => gioco.disponibile)
       }
 
       // Filter by number of players
       if (filters.value.groupPlayers) {
-        filtered = filtered.filter(gioco =>
-          filters.value.groupPlayers >= gioco.giocatori_min &&
-          filters.value.groupPlayers <= gioco.giocatori_max
+        filtered = filtered.filter(
+          (gioco) =>
+            filters.value.groupPlayers >= gioco.giocatori_min &&
+            filters.value.groupPlayers <= gioco.giocatori_max,
         )
       }
 
       // Filter by difficulty
       if (filters.value.difficulty.length > 0) {
-        filtered = filtered.filter(gioco =>
-          filters.value.difficulty.includes(gioco.difficolta)
-        )
+        filtered = filtered.filter((gioco) => filters.value.difficulty.includes(gioco.difficolta))
       }
 
       return filtered
@@ -226,7 +232,7 @@ export default defineComponent({
 
     const getImageUrl = (fileName) => {
       if (!fileName) return ''
-      return supabase.storage.from('Copertine_giochi').getPublicUrl(fileName).data.publicUrl
+      return supabase.storage.from(GAME_COVER_BUCKET).getPublicUrl(fileName).data.publicUrl
     }
 
     const showDialog = ref(false)

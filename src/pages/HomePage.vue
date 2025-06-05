@@ -2,9 +2,19 @@
   <q-page :class="$q.dark.isActive ? 'bg-dark' : 'bg-warm-gray-1'">
     <!-- Hero Section -->
     <div class="hero-section text-center q-pa-xl" data-aos="fade-down">
-      <div class="hero-header" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-          <img src="images/logo.png" alt="Life of Gamers Logo" style="max-width: 150px;" />
+      <div
+        class="hero-header"
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 20px;
+        "
+      >
+        <div style="display: flex; align-items: center; justify-content: center; gap: 20px">
+          <img src="images/logo.png" alt="Life of Gamers Logo" style="max-width: 150px" />
           <h1 class="text-h3 text-weight-bold text-gradient">Life of Gamers</h1>
         </div>
         <p class="text-h5 text-grey-8">Il posto ideale per giocare in compagnia</p>
@@ -27,18 +37,14 @@
           size="lg"
           unelevated
         >
-          <div class="row items-center">
-            Seguici su Instagram
-          </div>
+          <div class="row items-center">Seguici su Instagram</div>
         </q-btn>
       </div>
 
-      <p class="text-subtitle2 q-mt-md">
-        <q-icon name="people" /> Unisciti alla nostra community!
-      </p>
+      <p class="text-subtitle2 q-mt-md"><q-icon name="people" /> Unisciti alla nostra community!</p>
     </div>
 
-  <!-- Welcome Section -->
+    <!-- Welcome Section -->
     <div class="welcome-section q-mt-xl q-pa-lg" data-aos="fade-up">
       <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="q-pa-xl">
         <div class="text-center q-mt-lg">
@@ -67,10 +73,15 @@
           Benvenuto in LOG - Life Of Gamers! 🎲✨
         </div>
         <div class="text-body1 q-mb-md">
-          Sei mai stato bloccato in una serata di doom scrolling su vari social, netflix e youtube? Beh ecco, noi siamo l'alternativa che cercavi! Serate piene di sfide epiche, risate e improbabili alleanze.
+          Sei mai stato bloccato in una serata di doom scrolling su vari social, netflix e youtube?
+          Beh ecco, noi siamo l'alternativa che cercavi! Serate piene di sfide epiche, risate e
+          improbabili alleanze.
         </div>
         <div class="text-body1 q-mb-md">
-          Qui non servono manuali di mille pagine o strategie da gran maestro: basta la voglia di divertirsi e di passare una serata diversa dal solito. Che tu sia un esperto di deck-building, un amante del lancio di dadi o un totale principiante, sei nel posto giusto!
+          Qui non servono manuali di mille pagine o strategie da gran maestro: basta la voglia di
+          divertirsi e di passare una serata diversa dal solito. Che tu sia un esperto di
+          deck-building, un amante del lancio di dadi o un totale principiante, sei nel posto
+          giusto!
         </div>
         <div class="text-body1 q-mb-md">
           Unisciti a noi e scopri nuovi giochi, nuove amicizie e nuove emozioni!
@@ -79,19 +90,23 @@
         <ul class="features-list q-mb-lg">
           <li>✅ Un gruppo di persone accoglienti e pronte a farti scoprire giochi nuovi.</li>
           <li>✅ Serate piene di divertimento e nuovi amici.</li>
-          <li>✅ Tornei per chi vuole mettersi alla prova e partite rilassate per chi vuole solo divertirsi.</li>
+          <li>
+            ✅ Tornei per chi vuole mettersi alla prova e partite rilassate per chi vuole solo
+            divertirsi.
+          </li>
           <li>✅ La certezza di non dover mai più dire "Non so cosa fare stasera" 😎</li>
         </ul>
         <div class="text-body1 q-mb-md">
-          Vieni a trovarci, prendi una sedia e unisciti alla partita! Non serve esperienza, non serve strategia… serve solo la voglia di giocare!
+          Vieni a trovarci, prendi una sedia e unisciti alla partita! Non serve esperienza, non
+          serve strategia… serve solo la voglia di giocare!
         </div>
 
         <div class="text-h5 text-primary text-center q-mt-lg">🚀 Sei pronto? Noi sì!</div>
       </q-card>
     </div>
 
-      <!-- Instagram Preview Section -->
-      <div class="instagram-preview q-mt-xl q-pa-lg" data-aos="fade-up">
+    <!-- Instagram Preview Section -->
+    <div class="instagram-preview q-mt-xl q-pa-lg" data-aos="fade-up">
       <q-card :class="$q.dark.isActive ? 'bg-dark-drawer text-white' : 'bg-white'" class="q-pa-lg">
         <div class="text-h4 text-primary text-center q-mb-md">
           <q-icon name="fab fa-instagram" class="q-mr-sm" /> La nostra community su Instagram
@@ -102,38 +117,76 @@
             href="https://www.instagram.com/log_life_of_gamers/"
             target="_blank"
             class="text-primary"
-          >@log_life_of_gamers</a>
-          per contenuti esclusivi, aggiornamenti sugli eventi in programma o semplicemente per farti ispirare dalla nostra community!
+            >@log_life_of_gamers</a
+          >
+          per contenuti esclusivi, aggiornamenti sugli eventi in programma o semplicemente per farti
+          ispirare dalla nostra community!
         </p>
         <!-- Sezione Embed di Instagram -->
         <div class="instagram-carousel row justify-center q-mb-lg">
           <div class="instagram-post-container">
-            <div style="transform: none; height: auto;">
+            <div style="transform: none; height: auto">
               <blockquote
                 class="instagram-media"
                 data-instgrm-permalink="https://www.instagram.com/p/DGilmortnna/"
                 data-instgrm-version="14"
-                style="background: #fff; border: 0; border-radius: 3px; box-shadow: 0 0 1px rgba(0,0,0,0.5), 0 1px 10px rgba(0,0,0,0.15); margin: 1px; max-width: 326px; max-height: 500px; padding: 0; width: calc(100% - 2px);"
+                style="
+                  background: #fff;
+                  border: 0;
+                  border-radius: 3px;
+                  box-shadow:
+                    0 0 1px rgba(0, 0, 0, 0.5),
+                    0 1px 10px rgba(0, 0, 0, 0.15);
+                  margin: 1px;
+                  max-width: 326px;
+                  max-height: 500px;
+                  padding: 0;
+                  width: calc(100% - 2px);
+                "
               ></blockquote>
             </div>
           </div>
           <div class="instagram-post-container">
-            <div style="transform: none; height: auto;">
+            <div style="transform: none; height: auto">
               <blockquote
                 class="instagram-media"
                 data-instgrm-permalink="https://www.instagram.com/p/DGY42ZRNbH4/"
                 data-instgrm-version="14"
-                style="background: #fff; border: 0; border-radius: 3px; box-shadow: 0 0 1px rgba(0,0,0,0.5), 0 1px 10px rgba(0,0,0,0.15); margin: 1px; max-width: 326px; max-height: 500px; padding: 0; width: calc(100% - 2px);"
+                style="
+                  background: #fff;
+                  border: 0;
+                  border-radius: 3px;
+                  box-shadow:
+                    0 0 1px rgba(0, 0, 0, 0.5),
+                    0 1px 10px rgba(0, 0, 0, 0.15);
+                  margin: 1px;
+                  max-width: 326px;
+                  max-height: 500px;
+                  padding: 0;
+                  width: calc(100% - 2px);
+                "
               ></blockquote>
             </div>
           </div>
           <div class="instagram-post-container">
-            <div style="transform: none; height: auto;">
+            <div style="transform: none; height: auto">
               <blockquote
                 class="instagram-media"
                 data-instgrm-permalink="https://www.instagram.com/p/DFA7WkYNWN2/"
                 data-instgrm-version="14"
-                style="background: #fff; border: 0; border-radius: 3px; box-shadow: 0 0 1px rgba(0,0,0,0.5), 0 1px 10px rgba(0,0,0,0.15); margin: 1px; max-width: 326px; max-height: 500px; padding: 0; width: calc(100% - 2px);"
+                style="
+                  background: #fff;
+                  border: 0;
+                  border-radius: 3px;
+                  box-shadow:
+                    0 0 1px rgba(0, 0, 0, 0.5),
+                    0 1px 10px rgba(0, 0, 0, 0.15);
+                  margin: 1px;
+                  max-width: 326px;
+                  max-height: 500px;
+                  padding: 0;
+                  width: calc(100% - 2px);
+                "
               ></blockquote>
             </div>
           </div>
@@ -187,6 +240,7 @@
 <script>
 import { defineComponent, ref, onMounted } from 'vue'
 import { supabase } from 'src/supabase'
+import { GAME_COVER_BUCKET } from 'src/utils/constants'
 
 export default defineComponent({
   name: 'HomePage',
@@ -199,7 +253,8 @@ export default defineComponent({
     }
 
     const getCarouselImageUrl = (fileName) => {
-      return supabase.storage.from('Copertine_giochi').getPublicUrl(`foto/${fileName}`).data.publicUrl
+      return supabase.storage.from(GAME_COVER_BUCKET).getPublicUrl(`foto/${fileName}`).data
+        .publicUrl
     }
 
     onMounted(async () => {
@@ -212,14 +267,13 @@ export default defineComponent({
         featuredGames.value = await Promise.all(
           data.map(async (game) => {
             if (game.copertina) {
-              const { data: storageData } = await supabase
-                .storage
-                .from('Copertine_giochi')
+              const { data: storageData } = await supabase.storage
+                .from(GAME_COVER_BUCKET)
                 .getPublicUrl(game.copertina)
               return { ...game, copertina: storageData.publicUrl }
             }
             return game
-          })
+          }),
         )
 
         // Carica lo script di Instagram per gli embed
@@ -241,9 +295,9 @@ export default defineComponent({
       featuredGames,
       openInstagram,
       slide,
-      getCarouselImageUrl
+      getCarouselImageUrl,
     }
-  }
+  },
 })
 </script>
 
@@ -296,21 +350,21 @@ export default defineComponent({
 .instagram-media {
   margin: 0 auto;
 }
-  .hero-section img {
-    animation: fadeIn 1.2s ease-in-out;
-  }
+.hero-section img {
+  animation: fadeIn 1.2s ease-in-out;
+}
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
   }
-  .hero-section {
-    background: linear-gradient(135deg, #fff, #f7f7f7);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+.hero-section {
+  background: linear-gradient(135deg, #fff, #f7f7f7);
+}
 </style>

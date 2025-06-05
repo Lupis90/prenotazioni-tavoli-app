@@ -3,7 +3,6 @@
     <!-- Hero Section -->
     <div class="text-center q-mb-xl">
       <h2 class="text-gradient q-pb-md">Prenota il tuo gioco</h2>
-
     </div>
 
     <!-- Date Selection Card -->
@@ -54,7 +53,11 @@
             style="width: 350px"
           >
             <q-card
-              :class="[ 'game-card shadow-6', 'has-bookings', $q.dark.isActive ? 'bg-dark' : 'bg-white' ]"
+              :class="[
+                'game-card shadow-6',
+                'has-bookings',
+                $q.dark.isActive ? 'bg-dark' : 'bg-white',
+              ]"
             >
               <q-img :src="game.copertina" :ratio="16 / 9" class="game-image">
                 <div class="absolute-bottom image-overlay">
@@ -156,7 +159,11 @@
                   <div class="text-subtitle2 q-mb-sm">Difficoltà</div>
                   <q-option-group
                     v-model="filters.difficulty"
-                    :options="[ { label: 'Facile', value: 'facile' }, { label: 'Medio', value: 'medio' }, { label: 'Difficile', value: 'difficile' } ]"
+                    :options="[
+                      { label: 'Facile', value: 'facile' },
+                      { label: 'Medio', value: 'medio' },
+                      { label: 'Difficile', value: 'difficile' },
+                    ]"
                     type="checkbox"
                     dense
                   />
@@ -175,9 +182,18 @@
     <!-- Game Grid (for newly selected games) -->
     <div v-if="newlySelectedGames.length" class="scroll-container q-px-md q-mt-lg">
       <div class="row no-wrap scroll-area">
-        <div v-for="game in newlySelectedGames" :key="game.id" class="col-auto q-pr-md" style="width: 350px">
+        <div
+          v-for="game in newlySelectedGames"
+          :key="game.id"
+          class="col-auto q-pr-md"
+          style="width: 350px"
+        >
           <q-card
-            :class="[ 'game-card shadow-6', game.hasActiveBookings ? 'has-bookings' : '', $q.dark.isActive ? 'bg-dark' : 'bg-white' ]"
+            :class="[
+              'game-card shadow-6',
+              game.hasActiveBookings ? 'has-bookings' : '',
+              $q.dark.isActive ? 'bg-dark' : 'bg-white',
+            ]"
           >
             <q-img :src="game.copertina" :ratio="16 / 9" class="game-image">
               <div class="absolute-bottom image-overlay">
@@ -240,7 +256,7 @@
               v-model.number="peopleCount"
               type="number"
               label="Numero di persone"
-              :rules="[(val) => validatePeopleCount(val)]"
+              :rules="[(val) => validatePeopleCount(val, selectedGame.value)]"
               color="primary"
               dense
             >
@@ -277,6 +293,8 @@ import { defineComponent, ref, computed, onMounted, nextTick } from 'vue'
 import { supabase } from 'src/supabase'
 import { useQuasar } from 'quasar'
 import quasarLang from 'quasar/lang/it'
+import { generateSlots, validatePeopleCount } from 'src/composables/useBookings'
+import { DEFAULT_GAME_COVER_URL, GAME_COVER_BUCKET } from 'src/utils/constants'
 
 export default defineComponent({
   name: 'PrenotaPage',
@@ -369,15 +387,13 @@ export default defineComponent({
       // Se è impostato il numero di giocatori, il gioco deve supportare quel numero
       if (filters.value.groupPlayers) {
         options = options.filter(
-          opt =>
+          (opt) =>
             parseInt(opt.minPlayers) <= parseInt(filters.value.groupPlayers) &&
-            parseInt(opt.maxPlayers) >= parseInt(filters.value.groupPlayers)
+            parseInt(opt.maxPlayers) >= parseInt(filters.value.groupPlayers),
         )
       }
       if (filters.value.difficulty && filters.value.difficulty.length > 0) {
-        options = options.filter(
-          opt => filters.value.difficulty.includes(opt.difficulty)
-        )
+        options = options.filter((opt) => filters.value.difficulty.includes(opt.difficulty))
       }
       return options
     })
@@ -387,23 +403,6 @@ export default defineComponent({
         groupPlayers: null,
         difficulty: [],
       }
-    }
-
-    // Funzione helper per generare slot orari (step di 1 ora)
-    const generateSlots = (startTime, endTime) => {
-      let slots = []
-      const [startHour, startMin] = startTime.split(':').map(Number)
-      const [endHour, endMin] = endTime.split(':').map(Number)
-      let startMinutes = startHour * 60 + startMin
-      const endMinutes = endHour * 60 + endMin
-      while (startMinutes + 60 <= endMinutes) {
-        const h = Math.floor(startMinutes / 60)
-        const m = startMinutes % 60
-        const slotTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
-        slots.push(slotTime)
-        startMinutes += 60
-      }
-      return slots
     }
 
     // Nuove variabili per la selezione dei giochi
@@ -428,7 +427,7 @@ export default defineComponent({
       return availableSlots.value.filter(
         (game) =>
           selectedGames.value.includes(game.id) &&
-          !partiallyOccupiedGames.value.some((g) => g.id === game.id)
+          !partiallyOccupiedGames.value.some((g) => g.id === game.id),
       )
     })
 
@@ -454,10 +453,11 @@ export default defineComponent({
                 const newCard = document.querySelector('.q-mt-lg .game-card:last-child')
                 if (newCard) {
                   const cardRect = newCard.getBoundingClientRect()
-                  const offset = cardRect.top + window.pageYOffset - (window.innerHeight - cardRect.height) / 2
+                  const offset =
+                    cardRect.top + window.pageYOffset - (window.innerHeight - cardRect.height) / 2
                   window.scrollTo({
                     top: offset,
-                    behavior: 'smooth'
+                    behavior: 'smooth',
                   })
                 }
               }, 100)
@@ -544,12 +544,11 @@ export default defineComponent({
         giochi
           .filter((game) => !activeGameIds.has(game.id))
           .map(async (game) => {
-            let imageUrl =
-              'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png'
+            let imageUrl = DEFAULT_GAME_COVER_URL
             if (game.copertina) {
               const {
                 data: { publicUrl },
-              } = supabase.storage.from('Copertine_giochi').getPublicUrl(game.copertina)
+              } = supabase.storage.from(GAME_COVER_BUCKET).getPublicUrl(game.copertina)
               imageUrl = publicUrl
             }
             return {
@@ -561,7 +560,7 @@ export default defineComponent({
               minPlayers: game.giocatori_min,
               maxPlayers: game.giocatori_max,
             }
-          })
+          }),
       )
 
       const processedGames = await Promise.all(
@@ -570,7 +569,7 @@ export default defineComponent({
           if (game.copertina) {
             const {
               data: { publicUrl },
-            } = supabase.storage.from('Copertine_giochi').getPublicUrl(game.copertina)
+            } = supabase.storage.from(GAME_COVER_BUCKET).getPublicUrl(game.copertina)
             return {
               ...game,
               copertina: publicUrl,
@@ -579,11 +578,10 @@ export default defineComponent({
           }
           return {
             ...game,
-            copertina:
-              'https://aggrozltszxsqqgkyykh.supabase.co/storage/v1/object/public/Copertine_giochi/default-game-cover.png',
+            copertina: DEFAULT_GAME_COVER_URL,
             hasActiveBookings,
           }
-        })
+        }),
       )
       availableSlots.value = processedGames
 
@@ -659,17 +657,6 @@ export default defineComponent({
       nomeCliente.value = ''
       emailCliente.value = ''
       showDialog.value = true
-    }
-
-    function validatePeopleCount(val) {
-      if (selectedGame.value) {
-        const min = selectedGame.value.giocatori_min
-        const max = selectedGame.value.giocatori_max
-        if (val < min || val > max) {
-          return `Inserisci un numero tra ${min} e ${max}`
-        }
-      }
-      return true
     }
 
     async function confirmBooking() {
@@ -778,7 +765,9 @@ export default defineComponent({
 
 <style scoped>
 .game-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   border: 2px solid transparent;
 }
 

@@ -142,6 +142,7 @@ import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { supabase } from 'src/supabase'
 import { useRouter } from 'vue-router'
+import { GAME_COVER_BUCKET } from 'src/utils/constants'
 
 export default {
   name: 'LoadNewGames',
@@ -233,7 +234,7 @@ export default {
             copertina: game.copertina,
           }
           if (game.copertina) {
-            const { data } = supabase.storage.from('Copertine_giochi').getPublicUrl(game.copertina)
+            const { data } = supabase.storage.from(GAME_COVER_BUCKET).getPublicUrl(game.copertina)
             existingImageUrl.value = data.publicUrl
             imagePreview.value = null
           } else {
@@ -268,14 +269,14 @@ export default {
         if (coverImage.value) {
           // Se stiamo modificando e c'era già un'immagine, la eliminiamo
           if (isEditing.value && gameForm.value.copertina) {
-            await supabase.storage.from('Copertine_giochi').remove([gameForm.value.copertina])
+            await supabase.storage.from(GAME_COVER_BUCKET).remove([gameForm.value.copertina])
           }
 
           // Upload della nuova immagine
           const fileExt = coverImage.value.name.split('.').pop()
           fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`
           const { error: uploadError } = await supabase.storage
-            .from('Copertine_giochi')
+            .from(GAME_COVER_BUCKET)
             .upload(fileName, coverImage.value)
 
           if (uploadError) throw uploadError
