@@ -240,7 +240,6 @@ export default defineComponent({
           message: 'Prenotazione effettuata con successo!',
           color: 'positive'
         });
-        console.log('Dati prenotazione inseriti:', data);
 
         // Reset del form e redirect
         form.value.reset();
