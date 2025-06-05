@@ -180,7 +180,7 @@ export default defineComponent({
       {
         title: 'Dashboard',
         icon: 'dashboard',
-        to: '/dashboard',
+        to: { name: 'admin-dashboard' },
         adminOnly: true,
       },
       {

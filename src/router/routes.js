@@ -47,13 +47,8 @@ const routes = [
         meta: { requiresAdmin: true },
       },
       {
-        path: 'admin-dashboard',
-        name: 'admin-dashboard',
-        component: () => import('pages/AdminDashboard.vue'),
-        meta: { requiresAdmin: true },
-      },
-      {
         path: '/dashboard',
+        name: 'admin-dashboard',
         component: () => import('pages/AdminDashboard.vue'),
         meta: { requiresAdmin: true },
       },
