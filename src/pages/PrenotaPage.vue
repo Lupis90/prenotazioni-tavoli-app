@@ -303,7 +303,6 @@ export default defineComponent({
         })
         return
       }
-      console.log('Loaded availability data:', data)
       availableDates.value = data || []
     }
 
@@ -311,24 +310,17 @@ export default defineComponent({
     const isDateAvailable = (dateStr) => {
       if (!dateStr || !availableDates.value.length) return false
       const normalizedDate = dateStr.replace(/\//g, '-')
-      console.log(
-        `Checking date ${normalizedDate}, database dates:`,
-        availableDates.value.map((d) => d.data)
-      )
       const found = availableDates.value.some((d) => d.data === normalizedDate)
-      console.log(`Date ${normalizedDate} available: ${found}`)
       return found
     }
 
     // Quando una data viene selezionata, aggiorna gli slot
     const onDateSelected = (date) => {
-      console.log('Date selected:', date)
       selectedDate.value = date
       menu.value = false
 
       // Filtro dei blocchi per la data selezionata
       const timeRanges = availableDates.value.filter((d) => d.data === date)
-      console.log('Time ranges found:', timeRanges)
       availableTimeRanges.value = timeRanges
 
       // Genera gli slot orari dai blocchi
@@ -452,11 +444,9 @@ export default defineComponent({
 
     // Funzione per gestire la selezione di un nuovo gioco
     const onGameSelected = (gameId) => {
-      console.log('Game selected:', gameId)
       if (gameId) {
         const game = findGameById(gameId)
         if (game) {
-          console.log('Found game:', game)
           if (!selectedGames.value.includes(gameId)) {
             selectedGames.value.push(gameId)
             nextTick(() => {
@@ -599,7 +589,6 @@ export default defineComponent({
 
       const bookingsByGame = {}
       if (bookingsData) {
-        console.log('Bookings found for date:', bookingsData)
         bookingsData.forEach((booking) => {
           if (!bookingsByGame[booking.gioco_id]) {
             bookingsByGame[booking.gioco_id] = []
