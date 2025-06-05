@@ -773,14 +773,15 @@ export default {
           .gte('data_inizio', startOfDay)
           .lte('data_inizio', endOfDay)
 
-        totalPeopleForSelectedDate.value = data.reduce(
+        const rows = data || []
+        totalPeopleForSelectedDate.value = rows.reduce(
           (acc, booking) => acc + booking.numero_persone,
           0,
         );
 
         const gameBookings = {};
 
-        for (const booking of data) {
+        for (const booking of rows) {
           const gameId = booking.gioco_id;
           if (!gameBookings[gameId]) {
             gameBookings[gameId] = {
