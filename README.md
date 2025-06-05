@@ -2,6 +2,10 @@
 
 un app per prenotare tavoli e giochi
 
+## Setup environment variables
+Copy `.env.example` to `.env` and replace the placeholder values with your real Supabase credentials before starting the app.
+
+
 ## Install the dependencies
 ```bash
 yarn
