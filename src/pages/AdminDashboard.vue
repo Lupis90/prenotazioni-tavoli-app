@@ -18,170 +18,40 @@
     </div>
 
     <!-- Vista Calendario -->
-    <div v-if="activeView === 'calendar'">
-      <div class="row justify-between items-center q-mb-md">
-        <h2 class="text-h5 q-my-none">Calendario Prenotazioni</h2>
-        <div class="calendar-navigation">
-          <q-btn flat round icon="chevron_left" @click="previousMonth" />
-          <span class="text-h6 q-mx-md">{{ currentMonthName }} {{ currentYear }}</span>
-          <q-btn flat round icon="chevron_right" @click="nextMonth" />
-          <q-btn flat dense class="q-ml-sm" icon="today" label="Oggi" @click="goToToday" />
-        </div>
-      </div>
+    <CalendarView
+      v-if="activeView === 'calendar'"
+      :selected-date="selectedDate"
+      :total-people-for-selected-date="totalPeopleForSelectedDate"
+      :days-of-week="daysOfWeek"
+      :current-month-name="currentMonthName"
+      :current-year="currentYear"
+      :calendar-days="calendarDays"
+      :previous-month="previousMonth"
+      :next-month="nextMonth"
+      :go-to-today="goToToday"
+      :is-today="isToday"
+      :is-selected="isSelected"
+      :select-date="selectDate"
+      :get-booking-class="getBookingClass"
+      :format-date="formatDate"
+    />
 
-      <!-- Legenda -->
-      <div class="row q-mb-sm justify-end">
-        <div class="legend-item">
-          <div class="color-box bg-green-2"></div>
-          <span>0-6 persone</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box bg-yellow-2"></div>
-          <span>7-12 persone</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box bg-orange-2"></div>
-          <span>13-16 persone</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box bg-red-2"></div>
-          <span>>16 persone</span>
-        </div>
-      </div>
+    <!-- Vista Giornaliera -->
+    <DailyBookings
+      v-if="activeView === 'daily'"
+      :selected-date="selectedDate"
+      :total-people-for-selected-date="totalPeopleForSelectedDate"
+      :is-valid-date="isValidDate"
+      :on-date-selected="onDateSelected"
+      :daily-bookings="dailyBookings"
+      :daily-bookings-columns="dailyBookingsColumns"
+      :loading="loading"
+      :get-row-class="getRowClass"
+      :format-date="formatDate"
+    />
 
-      <!-- Calendario Mensile -->
-      <q-card flat bordered>
-        <q-card-section class="q-pa-none">
-          <div class="calendar-grid">
-            <!-- Intestazione giorni della settimana -->
-            <div class="calendar-header">
-              <div v-for="day in daysOfWeek" :key="day" class="calendar-day-name">
-                {{ day }}
-              </div>
-            </div>
-
-            <!-- Griglia dei giorni -->
-            <div class="calendar-body">
-              <div
-                v-for="(dayObj, index) in calendarDays"
-                :key="index"
-                class="calendar-day"
-                :class="[
-                  { 'other-month': !dayObj.currentMonth },
-                  { 'today': isToday(dayObj.date) },
-                  { 'selected': isSelected(dayObj.date) },
-                  getBookingClass(dayObj.bookings)
-                ]"
-                @click="selectDate(dayObj.date)"
-              >
-                <div class="calendar-day-number">{{ dayObj.day }}</div>
-                <div v-if="dayObj.bookings > 0" class="calendar-day-bookings">
-                  <q-badge color="primary" text-color="white">
-                    {{ dayObj.bookings }}
-                  </q-badge>
-                </div>
-              </div>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
-
-      <!-- Dettaglio giorno selezionato -->
-      <q-card v-if="selectedDate" class="q-mt-md">
-        <q-card-section class="row items-center">
-          <div class="col-12 col-md-6">
-            <h3 class="text-h5 q-my-none">Dettaglio {{ formatDate(selectedDate) }}</h3>
-          </div>
-          <div class="col-12 col-md-6 text-right">
-            <q-chip icon="people" color="primary" text-color="white">
-              Totale: {{ totalPeopleForSelectedDate }} persone
-            </q-chip>
-          </div>
-        </q-card-section>
-      </q-card>
-    </div>
-
-    <!-- Vista Giornaliera (componente esistente) -->
-    <div v-if="activeView === 'daily'">
-      <q-card>
-        <q-card-section class="row q-col-gutter-md items-center">
-          <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <q-label class="text-h6">Seleziona una data:</q-label>
-            <q-date
-              v-model="selectedDate"
-              mask="YYYY-MM-DD"
-              :options="isValidDate"
-              emit-immediately
-              @update:model-value="onDateSelected"
-            />
-          </div>
-
-          <q-card v-if="selectedDate" class="col-12 col-sm-6 col-md-4 col-lg-3 bg-primary-lighten-4">
-            <q-card-section>
-              <div class="text-center">
-                <q-icon name="people" size="lg" color="primary" />
-                <div class="text-h4 q-mt-sm">
-                  Totale persone prenotate il {{ formatDate(selectedDate) }}:
-                  <strong class="text-primary">{{ totalPeopleForSelectedDate }}</strong>
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
-        </q-card-section>
-      </q-card>
-
-      <div class="row q-col-gutter-md">
-        <section class="daily-bookings col q-mt-lg">
-          <h2>Prenotazioni Giornaliere</h2>
-          <q-table
-            :rows="dailyBookings"
-            :columns="dailyBookingsColumns"
-            row-key="date"
-            :loading="loading"
-          >
-            <template v-slot:body="props">
-              <q-tr :props="props" :class="getRowClass(props.row)">
-                <q-td key="date" :props="props">
-                  {{ formatDate(props.row.date) }}
-                </q-td>
-                <q-td key="totalBookings" :props="props">
-                  {{ props.row.totalBookings }}
-                </q-td>
-              </q-tr>
-            </template>
-          </q-table>
-        </section>
-      </div>
-    </div>
-
-    <!-- Vista Statistiche (nuova) -->
-    <div v-if="activeView === 'stats'">
-      <h2>Statistiche delle Prenotazioni</h2>
-      <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-6">
-          <q-card>
-            <q-card-section>
-              <h3 class="text-h6">Prenotazioni per Giorno della Settimana</h3>
-              <!-- Qui inserire il grafico -->
-              <div class="stats-placeholder q-pa-lg text-center">
-                Grafico di distribuzione delle prenotazioni per giorno della settimana
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card>
-            <q-card-section>
-              <h3 class="text-h6">Giochi Più Prenotati</h3>
-              <!-- Qui inserire il grafico -->
-              <div class="stats-placeholder q-pa-lg text-center">
-                Grafico dei giochi più prenotati
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-      </div>
-    </div>
+    <!-- Vista Statistiche -->
+    <BookingStats v-if="activeView === 'stats'" />
 
     <!-- Sezione giochi prenotati per data selezionata -->
     <section v-if="selectedDate" class="games-bookings q-mt-lg">
@@ -483,9 +353,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase'
 import { date, useQuasar } from 'quasar'
+import CalendarView from '../components/admin/CalendarView.vue'
+import DailyBookings from '../components/admin/DailyBookings.vue'
+import BookingStats from '../components/admin/BookingStats.vue'
 
 export default {
   name: 'AdminDashboard',
+  components: {
+    CalendarView,
+    DailyBookings,
+    BookingStats
+  },
   setup() {
     const $q = useQuasar();
 
@@ -1022,106 +900,9 @@ export default {
 </script>
 
 <style scoped>
+
 .admin-dashboard {
   padding: 20px;
-}
-
-/* Stili per il calendario */
-.calendar-grid {
-  display: flex;
-  flex-direction: column;
-}
-
-.calendar-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.calendar-day-name {
-  padding: 10px;
-  text-align: center;
-  font-weight: bold;
-}
-
-.calendar-body {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: minmax(80px, auto);
-}
-
-.calendar-day {
-  position: relative;
-  border: 1px solid #e0e0e0;
-  padding: 5px;
-  min-height: 80px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.calendar-day:hover {
-  background-color: rgba(0, 0, 0, 0.03);
-}
-
-.calendar-day.other-month {
-  color: #bdbdbd;
-  background-color: #fafafa;
-}
-
-.calendar-day.today {
-  border: 2px solid #1976d2;
-}
-
-.calendar-day.selected {
-  background-color: rgba(25, 118, 210, 0.1);
-}
-
-.calendar-day-number {
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.calendar-day-bookings {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-}
-
-/* Legenda */
-.legend-item {
-  display: flex;
-  align-items: center;
-  margin-left: 20px;
-}
-
-.color-box {
-  width: 20px;
-  height: 20px;
-  margin-right: 5px;
-  border: 1px solid #e0e0e0;
-}
-
-/* Placeholder per grafici nella sezione statistiche */
-.stats-placeholder {
-  height: 200px;
-  background-color: #f5f5f5;
-  border: 1px dashed #bdbdbd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Stili esistenti */
-.date-filter {
-  max-width: none;
-  width: 100%;
-}
-
-.total-people q-card {
-  background: #f5f5f5;
-  text-align: center;
-  padding: 10px;
 }
 
 .q-expansion-item {
@@ -1130,10 +911,5 @@ export default {
 
 .q-expansion-item__content {
   background-color: rgba(0, 0, 0, 0.03);
-}
-
-.daily-bookings {
-  width: 100%;
-  margin-top: 20px;
 }
 </style>
