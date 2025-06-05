@@ -218,7 +218,7 @@ export default defineComponent({
 
       // 5. Se tutto ok, inseriamo la prenotazione (senza toccare quantita)
       try {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('prenotazioni')
           .insert([
             {
@@ -240,7 +240,6 @@ export default defineComponent({
           message: 'Prenotazione effettuata con successo!',
           color: 'positive'
         });
-        console.log('Dati prenotazione inseriti:', data);
 
         // Reset del form e redirect
         form.value.reset();
