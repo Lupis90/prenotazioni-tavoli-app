@@ -271,7 +271,7 @@
                                 round
                                 dense
                                 icon="more_vert"
-                                @click.stop="showBookingActions(booking)"
+                                @click.stop="showBookingActions()"
                               >
                                 <q-menu>
                                   <q-list style="min-width: 100px">
@@ -673,8 +673,6 @@ export default {
         const firstDay = new Date(year, month, 1)
         const lastDay = new Date(year, month + 1, 0)
 
-        const startDate = formatDateForDB(firstDay)
-        const endDate = formatDateForDB(lastDay)
 
         // Query con range di date più ampio per includere giorni prima e dopo il mese corrente
         const prevMonth = new Date(year, month - 1, 1)
@@ -704,6 +702,7 @@ export default {
         calendarData.value = bookingsByDate
 
       } catch (error) {
+        console.error('Errore durante il caricamento dei dati del calendario:', error)
         $q.notify({
           color: 'negative',
           message: 'Si è verificato un errore durante il caricamento dei dati del calendario.',
@@ -740,6 +739,7 @@ export default {
         calendarData.value = bookingsByDate;
 
       } catch (error) {
+        console.error('Errore durante il caricamento dei dati giornalieri:', error)
         $q.notify({
           color: 'negative',
           message: 'Si è verificato un errore durante il caricamento dei dati.',
@@ -881,7 +881,7 @@ export default {
       editBookingDialog.value = true;
     }
 
-    const showBookingActions = (booking) => {
+    const showBookingActions = () => {
       // Questa funzione gestisce l'apertura del menu contestuale
       // Non serve implementare ulteriore logica perché il menu è gestito da q-menu
     }
