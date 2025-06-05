@@ -911,6 +911,7 @@ export default {
 
         // Ricarica i dati dopo l'eliminazione
         await fetchGameBookings(selectedDate.value);
+        await fetchDailyBookings();
         await fetchCalendarData();
         deleteConfirmDialog.value = false;
       } catch (error) {
@@ -962,6 +963,8 @@ export default {
 
         // Ricarica i dati dopo l'aggiornamento
         await fetchGameBookings(selectedDate.value);
+        await fetchDailyBookings();
+        await fetchCalendarData();
         editBookingDialog.value = false;
       } catch (error) {
         console.error('Errore durante l\'aggiornamento:', error);
