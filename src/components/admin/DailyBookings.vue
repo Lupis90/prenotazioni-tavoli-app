@@ -5,7 +5,7 @@
         <div class="col-12 col-sm-6 col-md-4 col-lg-3">
           <q-label class="text-h6">Seleziona una data:</q-label>
           <q-date
-            v-model="selectedDate"
+            :model-value="selectedDate"
             mask="YYYY-MM-DD"
             :options="isValidDate"
             emit-immediately
@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   selectedDate: String,
   totalPeopleForSelectedDate: Number,
   isValidDate: Function,

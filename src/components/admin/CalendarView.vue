@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   selectedDate: String,
   totalPeopleForSelectedDate: Number,
   daysOfWeek: Array,
