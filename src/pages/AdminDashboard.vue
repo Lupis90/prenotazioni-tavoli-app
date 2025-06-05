@@ -667,12 +667,9 @@ export default {
     const fetchCalendarData = async () => {
       loading.value = true
       try {
-        // Ottieni il primo e l'ultimo giorno del mese corrente visualizzato
+        // Ottieni l'anno e il mese correnti visualizzati
         const year = currentYear.value
         const month = currentMonth.value
-        const firstDay = new Date(year, month, 1)
-        const lastDay = new Date(year, month + 1, 0)
-
 
         // Query con range di date più ampio per includere giorni prima e dopo il mese corrente
         const prevMonth = new Date(year, month - 1, 1)
